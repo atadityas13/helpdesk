@@ -524,9 +524,8 @@
         }
 
         function startChatWithTicket(ticketNumber) {
-            // Redirect to widget chat or chat page with ticket number
-            // This could be a dedicated chat page or using the floating widget
-            window.location.href = `index.php?chat=${ticketNumber}`;
+            // Redirect to dedicated chat page with ticket number
+            window.location.href = `chat.php?ticket=${ticketNumber}`;
         }
 
         function trackTicket() {
