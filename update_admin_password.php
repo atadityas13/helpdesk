@@ -8,11 +8,12 @@ require_once 'src/config/database.php';
 
 $newPassword = 'password123';
 $newHash = '$2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86.jL5rKlLa';
+$username = 'admin';
 
 // Update admin password
 $query = "UPDATE admins SET password = ? WHERE username = ?";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ss", $newHash, 'admin');
+$stmt->bind_param("ss", $newHash, $username);
 
 if ($stmt->execute()) {
     echo "✅ Admin password updated successfully!<br>";
