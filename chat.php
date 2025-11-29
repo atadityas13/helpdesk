@@ -511,8 +511,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         document.addEventListener('DOMContentLoaded', () => {
             initEmojiPicker();
             loadMessages();
-            // Refresh messages every 2 seconds instead of 3
-            messageRefreshInterval = setInterval(loadMessages, 2000);
+            // Refresh messages every 1 second for more responsive status updates
+            messageRefreshInterval = setInterval(loadMessages, 1000);
             
             // Send typing indicator when user starts typing
             textarea.addEventListener('input', () => {
@@ -708,7 +708,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
 
         function checkTypingStatus() {
-            // Check if someone is typing
+            // Check if someone is typing (only show if it's NOT me typing)
             fetch(`src/api/typing-status.php?ticket_number=${TICKET_NUMBER}`)
             .then(response => response.json())
             .then(data => {
@@ -716,12 +716,15 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 const existingTyping = messagesArea.querySelector('.typing-indicator');
                 
                 if (data.success && data.data && data.data.is_typing) {
-                    if (!existingTyping) {
+                    const senderType = data.data.sender_type;
+                    
+                    // Only show typing indicator if it's from the OTHER person
+                    // Customer is viewing, so only show if ADMIN is typing
+                    if (senderType === 'admin' && !existingTyping) {
                         const typingEl = document.createElement('div');
-                        const senderType = data.data.sender_type;
-                        const typingText = senderType === 'admin' ? 'Admin Support sedang mengetik...' : 'Customer sedang mengetik...';
+                        const typingText = 'Admin Support sedang mengetik...';
                         
-                        typingEl.className = 'message ' + senderType;
+                        typingEl.className = 'message admin';
                         typingEl.innerHTML = `
                             <div>
                                 <div class="typing-indicator">

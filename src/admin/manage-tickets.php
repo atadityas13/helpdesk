@@ -570,6 +570,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             if (ticketIdAdmin) {
                 initEmojiPickerAdmin();
                 startTypingIndicator();
+                // Auto reload messages every 1 second to keep status updated
+                setInterval(loadMessagesAdmin, 1000);
                 
                 adminTextarea?.addEventListener('input', () => {
                     sendTypingStatusAdmin(true);
@@ -660,21 +662,25 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                     
                     if (data.success && data.data && data.data.is_typing) {
                         const senderType = data.data.sender_type;
-                        const typingText = senderType === 'customer' ? 'Customer sedang mengetik...' : 'Admin sedang mengetik...';
                         
-                        if (!typingIndicator.innerHTML) {
-                            typingIndicator.innerHTML = `
-                                <div class="chat-message ${senderType}">
-                                    <div class="typing-indicator">
-                                        <div class="typing-dot"></div>
-                                        <div class="typing-dot"></div>
-                                        <div class="typing-dot"></div>
+                        // Only show typing indicator if CUSTOMER is typing (not admin)
+                        if (senderType === 'customer') {
+                            if (!typingIndicator.innerHTML) {
+                                typingIndicator.innerHTML = `
+                                    <div class="chat-message customer">
+                                        <div class="typing-indicator">
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                        </div>
+                                        <div class="chat-message-time">Customer sedang mengetik...</div>
                                     </div>
-                                    <div class="chat-message-time">${typingText}</div>
-                                </div>
-                            `;
-                            const messagesArea = document.querySelector('.chat-messages');
-                            if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+                                `;
+                                const messagesArea = document.querySelector('.chat-messages');
+                                if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+                            }
+                        } else {
+                            typingIndicator.innerHTML = '';
                         }
                     } else {
                         typingIndicator.innerHTML = '';
@@ -682,6 +688,18 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 })
                 .catch(error => console.error('Error checking typing:', error));
             }, 1000);
+        }
+
+        function loadMessagesAdmin() {
+            if (!ticketIdAdmin) return;
+            
+            const ticketNumberEl = document.querySelector('.chat-header h3');
+            const ticketNumber = ticketNumberEl?.textContent.trim();
+            
+            if (!ticketNumber) return;
+            
+            // Refresh messages to get latest status
+            location.reload();
         }
 
         function handleFileSelectAdmin(event) {
