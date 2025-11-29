@@ -1,12 +1,10 @@
 <?php
 /**
- * Helpdesk Chat - User Chat Interface
+ * Helpdesk Chat - User Chat Interface (Responsive & Modern)
  */
 
-// Get ticket number from URL parameter
 $ticketNumber = isset($_GET['ticket']) ? trim($_GET['ticket']) : null;
 
-// Validate ticket number format
 if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
     header('Location: index.php');
     exit;
@@ -18,306 +16,379 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Ticket <?php echo htmlspecialchars($ticketNumber); ?></title>
-    <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <!-- EmojiMart CSS -->
     <link href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
+        :root {
+            --primary: #25d366;
+            --primary-dark: #1a9d56;
+            --secondary: #667eea;
+            --secondary-dark: #764ba2;
+            --customer-bg: #dcf8c6;
+            --admin-bg: #e5e5ea;
+            --text-primary: #000;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --border-color: #e0e0e0;
+            --bg-light: #f5f5f5;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: #fff;
             min-height: 100vh;
+            overflow: hidden;
         }
         
         .chat-container {
-            max-width: 900px;
-            margin: 0 auto;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background: white;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
         
+        /* ===== HEADER ===== */
         .chat-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .chat-header h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-        
-        .chat-header p {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-        
-        .chat-info {
-            background: #f9f9f9;
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 16px;
+            border-bottom: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            box-shadow: var(--shadow-md);
+            color: white;
+            position: relative;
         }
         
-        .ticket-info {
+        .header-left {
             display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
         }
         
-        .info-item {
-            font-size: 13px;
+        .header-info h1 {
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
-        .info-item strong {
-            color: #333;
-        }
-        
-        .info-item span {
-            color: #666;
+        .header-info p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 2px 0 0 0;
         }
         
         .status-badge {
             display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 11px;
             color: white;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         
-        .status-open { background: #FFA500; }
-        .status-in_progress { background: #2196F3; }
-        .status-resolved { background: #28a745; }
-        .status-closed { background: #6c757d; }
+        .status-badge.open { background: #ff9800; }
+        .status-badge.in_progress { background: #2196f3; }
+        .status-badge.resolved { background: #4caf50; }
+        .status-badge.closed { background: #9e9e9e; }
         
+        .header-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .header-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+            white-space: nowrap;
+        }
+        
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .header-btn.close-btn {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: rgba(231, 76, 60, 0.3);
+        }
+        
+        .header-btn.close-btn:hover {
+            background: rgba(231, 76, 60, 0.3);
+        }
+        
+        /* ===== MESSAGES AREA ===== */
         .messages-area {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
+            background: #fff;
         }
         
-        .message {
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+        
+        .message-group {
             display: flex;
-            gap: 10px;
-            animation: slideIn 0.3s ease;
+            margin-bottom: 4px;
+            animation: slideIn 0.3s ease-out;
         }
         
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
-        .message.customer {
+        .message-group.customer {
             justify-content: flex-end;
         }
         
         .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            line-height: 1.5;
-            font-size: 14px;
-            word-break: break-word;
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            line-height: 1.4;
+            font-size: 13px;
+            word-wrap: break-word;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         
         .customer .message-bubble {
-            background: #667eea;
-            color: white;
-            border-bottom-right-radius: 2px;
+            background: var(--customer-bg);
+            color: var(--text-primary);
+            border-bottom-right-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .admin .message-bubble {
-            background: #f0f0f0;
-            color: #333;
-            border-bottom-left-radius: 2px;
+            background: var(--admin-bg);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .message-content {
+            word-break: break-word;
+            line-height: 1.5;
         }
         
         .message-time {
             font-size: 11px;
-            color: #999;
-            margin-top: 4px;
-            padding: 0 16px;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-        
-        .customer .message-time {
-            text-align: right;
+            gap: 4px;
             justify-content: flex-end;
+            margin-top: 2px;
         }
         
         .message-status {
-            display: inline-flex;
-            font-size: 12px;
+            font-size: 11px;
+            line-height: 1;
         }
         
-        .status-sending { color: #999; }
-        .status-sent { color: #667eea; font-weight: bold; }
-        .status-read { color: #28a745; font-weight: bold; }
+        .status-sent { color: #34a7ea; }
+        .status-read { color: #34a7ea; font-weight: bold; }
         
-        .closed-notice {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: 600;
-        }
-        
-        .input-area-disabled {
-            background: #f5f5f5;
-        }
-        
-        .input-area-disabled textarea {
-            background: #f9f9f9;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        
-        .input-area-disabled button,
-        .input-area-disabled label {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 12px 16px;
-            background: #f0f0f0;
+        .message-attachment {
+            max-width: 100%;
+            max-height: 280px;
             border-radius: 12px;
-            width: fit-content;
+            margin-top: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
         
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #999;
-            animation: typing 1.4s infinite;
+        .message-attachment:hover {
+            transform: scale(1.02);
         }
         
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-10px); }
-        }
-        
+        /* ===== EMPTY STATE ===== */
         .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            color: #999;
-            padding: 40px;
+            gap: 12px;
+            color: var(--text-muted);
+            padding: 40px 20px;
             text-align: center;
+            height: 100%;
         }
         
         .empty-state-icon {
-            font-size: 48px;
+            font-size: 64px;
+            opacity: 0.2;
         }
         
+        .empty-state p {
+            font-size: 14px;
+        }
+        
+        /* ===== TYPING INDICATOR ===== */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 14px;
+            background: var(--admin-bg);
+            border-radius: 18px;
+            width: fit-content;
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        /* ===== CLOSED NOTICE ===== */
+        .closed-notice {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a8 100%);
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.1);
+        }
+        
+        /* ===== INPUT AREA ===== */
         .input-area {
-            padding: 20px;
-            border-top: 1px solid #eee;
-            background: white;
+            padding: 12px 16px 16px;
+            background: #fff;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .input-area.disabled {
+            background: var(--bg-light);
+            opacity: 0.6;
+            pointer-events: none;
         }
         
         .message-input {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: flex-end;
         }
         
         .input-wrapper {
             flex: 1;
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: flex-end;
+            background: var(--bg-light);
+            border-radius: 24px;
+            padding: 0 12px;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+            background: #f0f9f6;
         }
         
         .message-input textarea {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
             resize: none;
-            min-height: 45px;
+            min-height: 36px;
             max-height: 100px;
-        }
-        
-        .message-input textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            color: var(--text-primary);
         }
         
-        .icon-btn {
-            width: 45px;
-            height: 45px;
+        .message-input textarea::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .icon-btn, .send-btn {
+            width: 36px;
+            height: 36px;
             padding: 0;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            background: none;
+            border: none;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
+            color: var(--primary);
+            flex-shrink: 0;
+            border-radius: 50%;
         }
         
-        .icon-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-        
-        .send-btn {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            height: 45px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .send-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        .icon-btn:hover, .send-btn:hover {
+            transform: scale(1.1);
+            background: rgba(37, 211, 102, 0.1);
         }
         
         .send-btn:disabled {
@@ -326,37 +397,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             transform: none;
         }
         
-        .back-btn {
-            color: white;
-            text-decoration: none;
-            font-size: 13px;
-            margin-top: 5px;
-            opacity: 0.9;
-            transition: opacity 0.3s;
-        }
-        
-        .back-btn:hover {
-            opacity: 1;
-        }
-        
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .emoji-picker-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .emoji-mart {
-            position: absolute;
-            bottom: 60px !important;
-            right: 0 !important;
-            z-index: 1000;
-        }
-        
+        /* ===== FILE INPUT ===== */
         .file-input-label {
             position: relative;
             overflow: hidden;
@@ -369,59 +410,232 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         
         .preview-area {
             display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f9f9f9;
-            border-radius: 6px;
+            padding: 8px;
+            background: var(--bg-light);
+            border-radius: 8px;
             position: relative;
+            margin-bottom: 8px;
+            border: 2px dashed var(--border-color);
         }
         
         .preview-area.show {
             display: block;
+            animation: slideIn 0.3s ease-out;
         }
         
         .preview-image {
-            max-width: 150px;
-            max-height: 150px;
+            max-width: 140px;
+            max-height: 140px;
             border-radius: 6px;
         }
         
         .remove-file {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            background: #e74c3c;
+            top: 4px;
+            right: 4px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         
+        .remove-file:hover {
+            transform: scale(1.1);
+        }
+        
+        /* ===== EMOJI PICKER ===== */
+        .emoji-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .emoji-mart {
+            position: absolute !important;
+            bottom: 50px !important;
+            right: 0 !important;
+            z-index: 1000 !important;
+            max-height: 320px !important;
+            box-shadow: var(--shadow-md) !important;
+            border-radius: 12px !important;
+        }
+        
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
+            .message-bubble {
+                max-width: 85%;
+                padding: 8px 12px;
+            }
+            
+            .chat-header {
+                padding: 10px 12px;
+            }
+            
+            .header-info h1 {
+                font-size: 14px;
+            }
+            
+            .header-info p {
+                font-size: 11px;
+            }
+            
+            .header-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            
+            .messages-area {
+                padding: 12px;
+            }
+            
+            .input-area {
+                padding: 10px 12px 12px;
+            }
+            
+            .message-input textarea {
+                font-size: 14px;
+                min-height: 32px;
+            }
+            
+            .icon-btn, .send-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+            
+            .empty-state {
+                padding: 20px;
+            }
+            
+            .empty-state-icon {
+                font-size: 48px;
+            }
+            
+            .emoji-mart {
+                bottom: 45px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
             .chat-container {
-                height: auto;
-                min-height: 100vh;
+                border-radius: 0;
             }
             
             .message-bubble {
                 max-width: 90%;
+                font-size: 12px;
+                padding: 7px 10px;
             }
             
-            .chat-info {
-                flex-direction: column;
-                align-items: flex-start;
+            .chat-header {
+                padding: 8px 10px;
             }
             
-            .ticket-info {
-                width: 100%;
+            .header-info h1 {
+                font-size: 13px;
             }
             
-            .emoji-mart {
-                max-height: 300px !important;
+            .header-info p {
+                font-size: 10px;
+            }
+            
+            .header-actions {
+                gap: 2px;
+            }
+            
+            .header-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+            
+            .messages-area {
+                padding: 8px;
+                gap: 4px;
+            }
+            
+            .input-area {
+                padding: 8px 10px 10px;
+            }
+            
+            .input-wrapper {
+                padding: 0 10px;
+            }
+            
+            .message-input textarea {
+                font-size: 13px;
+                padding: 8px 0;
+            }
+            
+            .icon-btn, .send-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+            }
+            
+            .closed-notice {
+                font-size: 12px;
+                padding: 10px 12px;
+                margin-bottom: 10px;
+            }
+            
+            .preview-image {
+                max-width: 100px;
+                max-height: 100px;
+            }
+            
+            .message-time {
+                font-size: 10px;
+            }
+        }
+        
+        /* ===== DARK MODE SUPPORT ===== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #fff;
+                --text-secondary: #ccc;
+                --text-muted: #999;
+                --bg-light: #2a2a2a;
+            }
+            
+            .chat-container {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            }
+            
+            .messages-area {
+                background: #1a1a1a;
+            }
+            
+            .input-area {
+                background: #2a2a2a;
+                border-top-color: #3a3a3a;
+            }
+            
+            .input-wrapper {
+                background: #3a3a3a;
+                border-color: #4a4a4a;
+            }
+            
+            .input-wrapper:focus-within {
+                background: #404040;
+            }
+            
+            .customer .message-bubble {
+                background: #056162;
+                color: white;
+            }
+            
+            .admin .message-bubble {
+                background: #3a3a3a;
+                color: white;
             }
         }
     </style>
@@ -430,21 +644,15 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
     <div class="chat-container">
         <!-- Header -->
         <div class="chat-header">
-            <div class="header-top">
-                <div>
-                    <h1>💬 Chat Bantuan</h1>
-                    <p id="ticketDisplay">Ticket: <?php echo htmlspecialchars($ticketNumber); ?></p>
+            <div class="header-left">
+                <div class="header-info">
+                    <h1>💬 <?php echo htmlspecialchars($ticketNumber); ?></h1>
+                    <p><span class="status-badge" id="statusBadge">Memuat...</span></p>
                 </div>
-                <a href="index.php" class="back-btn">← Kembali</a>
             </div>
-        </div>
-
-        <!-- Ticket Info -->
-        <div class="chat-info" id="ticketInfo">
-            <div class="ticket-info" id="ticketDetails">
-                <div class="info-item">
-                    <strong>Status:</strong> <span class="status-badge" id="statusBadge">Memuat...</span>
-                </div>
+            <div class="header-actions">
+                <button class="header-btn" title="Info" onclick="showTicketInfo()">ℹ️</button>
+                <button class="header-btn close-btn" title="Akhiri" onclick="closeTicket()">🔒</button>
             </div>
         </div>
 
@@ -460,92 +668,71 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         <div class="input-area" id="inputArea">
             <div id="closedNotice"></div>
             
-            <form id="messageForm">
-                <div class="preview-area" id="previewArea">
-                    <img id="previewImage" class="preview-image" alt="Preview">
-                    <button type="button" class="remove-file" onclick="removeFile()">✕</button>
+            <div class="preview-area" id="previewArea">
+                <img id="previewImage" class="preview-image" alt="Preview">
+                <button type="button" class="remove-file" onclick="removeFile()">✕</button>
+            </div>
+            
+            <div class="message-input">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Pesan..." rows="1"></textarea>
+                    <div class="emoji-picker-wrapper">
+                        <button type="button" class="icon-btn" id="emojiBtn" title="Emoji">😊</button>
+                        <div id="emojiMart"></div>
+                    </div>
                 </div>
                 
-                <div class="message-input">
-                    <div class="input-wrapper">
-                        <textarea id="messageInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
-                        
-                        <div class="emoji-picker-wrapper">
-                            <button type="button" class="icon-btn" id="emojiBtn" title="Tambah emoji">😊</button>
-                            <div id="emojiMart"></div>
-                        </div>
-                    </div>
-                    
-                    <label class="icon-btn file-input-label" title="Lampirkan gambar">
-                        📎
-                        <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
-                    </label>
-                    
-                    <button type="button" onclick="sendMessage(event)" class="send-btn">📤 Kirim</button>
-                </div>
-            </form>
+                <label class="icon-btn file-input-label" title="Foto">
+                    📷
+                    <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+                </label>
+                
+                <button type="button" onclick="sendMessage(event)" class="send-btn" title="Kirim">📤</button>
+            </div>
         </div>
     </div>
 
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    
-    <!-- EmojiMart JS -->
     <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     
     <script>
         const TICKET_NUMBER = '<?php echo htmlspecialchars($ticketNumber); ?>';
         let messageRefreshInterval;
-        let lastMessageId = 0;
         let selectedFile = null;
         let emojiPickerOpen = false;
+        let currentTicketStatus = 'open';
 
-        // Auto resize textarea
         const textarea = document.getElementById('messageInput');
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });
 
-        // Load messages on page load
         document.addEventListener('DOMContentLoaded', () => {
             initEmojiPicker();
             loadMessages();
             
-            // Send typing indicator when user starts typing
-            textarea.addEventListener('input', () => {
-                sendTypingStatus(true);
-            });
+            textarea.addEventListener('input', () => sendTypingStatus(true));
+            textarea.addEventListener('blur', () => sendTypingStatus(false));
             
-            textarea.addEventListener('blur', () => {
-                sendTypingStatus(false);
-            });
-            
-            // Auto-refresh messages every 2 seconds to update status and typing indicator
-            messageRefreshInterval = setInterval(() => {
-                loadMessages();
-            }, 2000);
+            messageRefreshInterval = setInterval(loadMessages, 2000);
         });
 
         function initEmojiPicker() {
             const emojiBtn = document.getElementById('emojiBtn');
-            
-            // Prevent default form submission when clicking emoji button
             emojiBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 emojiPickerOpen = !emojiPickerOpen;
                 const emojiMart = document.getElementById('emojiMart');
                 
                 if (emojiPickerOpen) {
-                    // Initialize EmojiMart
                     const div = document.createElement('div');
                     emojiMart.innerHTML = '';
                     emojiMart.appendChild(div);
                     
                     new EmojiMart.Picker({
                         onEmojiSelect: (emoji) => {
-                            const currentText = textarea.value;
-                            textarea.value = currentText + emoji.native;
+                            textarea.value += emoji.native;
                             textarea.focus();
                             textarea.dispatchEvent(new Event('input'));
                             emojiPickerOpen = false;
@@ -553,15 +740,12 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                         },
                         theme: 'light',
                         set: 'native'
-                    }).then(picker => {
-                        div.appendChild(picker);
-                    });
+                    }).then(picker => div.appendChild(picker));
                 } else {
                     emojiMart.innerHTML = '';
                 }
             });
             
-            // Close emoji picker when clicking outside
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.emoji-picker-wrapper')) {
                     emojiPickerOpen = false;
@@ -571,7 +755,6 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
 
         function sendTypingStatus(isTyping) {
-            // Send typing status to server
             fetch('src/api/typing-status.php', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -579,137 +762,98 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                     is_typing: isTyping,
                     sender_type: 'customer'
                 }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).catch(error => console.error('Error:', error));
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.error('Error:', e));
         }
 
         function loadMessages() {
             fetch(`src/api/get-messages.php?ticket_number=${TICKET_NUMBER}`)
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success && data.data) {
                     displayMessages(data.data);
                     checkTypingStatus();
-                } else {
-                    showMessagesError('Gagal memuat pesan');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessagesError('Terjadi kesalahan jaringan');
-            });
+            .catch(e => console.error('Error:', e));
         }
 
         function displayMessages(ticketData) {
             const ticket = ticketData.ticket;
             const messages = ticketData.messages || [];
             const messagesArea = document.getElementById('messagesArea');
-
-            // Update ticket info
-            updateTicketInfo(ticket);
             
-            // Update input area based on ticket status
+            currentTicketStatus = ticket.status;
+            updateTicketInfo(ticket);
             updateInputAreaStatus(ticket.status);
 
-            // Check if there are existing messages to avoid flickering
-            const existingMessages = messagesArea.querySelectorAll('.message');
-            const hasTypingIndicator = messagesArea.querySelector('.typing-indicator');
+            const existingMessages = messagesArea.querySelectorAll('.message-group');
             
-            // Only clear and rebuild if message count changed or first load
-            if (existingMessages.length !== messages.length || existingMessages.length === 0) {
-                // Remove typing indicator temporarily
-                if (hasTypingIndicator) {
-                    hasTypingIndicator.remove();
-                }
+            if (existingMessages.length !== messages.length || !existingMessages.length) {
+                const typingEl = messagesArea.querySelector('.typing-indicator')?.parentElement;
+                if (typingEl) typingEl.remove();
 
                 messagesArea.innerHTML = '';
 
-                if (messages.length === 0) {
+                if (!messages.length) {
                     messagesArea.innerHTML = `
                         <div class="empty-state">
-                            <div class="empty-state-icon">📝</div>
-                            <p>Belum ada pesan. Silakan kirim pesan Anda.</p>
+                            <div class="empty-state-icon">💬</div>
+                            <p>Belum ada pesan. Silakan mulai percakapan.</p>
                         </div>
                     `;
                     markMessagesAsRead();
                     return;
                 }
 
-                // Display messages
-                messages.forEach((msg, idx) => {
-                    // Validate sender_type - STRICT CHECK
-                    if (!msg.sender_type) {
-                        console.error('Message missing sender_type:', msg);
-                        return;
-                    }
+                messages.forEach(msg => {
+                    if (!msg.sender_type) return;
                     
                     const senderType = String(msg.sender_type).toLowerCase().trim();
                     const isCustomer = (senderType === 'customer');
-                    const messageEl = document.createElement('div');
-                    messageEl.className = `message ${isCustomer ? 'customer' : 'admin'}`;
+                    
+                    const group = document.createElement('div');
+                    group.className = `message-group ${isCustomer ? 'customer' : 'admin'}`;
+                    
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
                     
                     const time = formatTime(msg.created_at);
-                    let statusIcon = '';
+                    let status = '';
                     
-                    // Show status only for customer messages
                     if (isCustomer) {
-                        if (msg.is_read) {
-                            statusIcon = '<span class="message-status status-read">✓✓</span>';
-                        } else {
-                            statusIcon = '<span class="message-status status-sent">✓</span>';
-                        }
+                        status = msg.is_read 
+                            ? '<span class="message-status status-read">✓✓</span>' 
+                            : '<span class="message-status status-sent">✓</span>';
                     }
                     
-                    let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;
-                    
+                    let content = `<div class="message-content">${escapeHtml(msg.message)}</div>`;
                     if (msg.attachment_url) {
-                        bubbleContent += `<br><img src="${escapeHtml(msg.attachment_url)}" class="message-attachment" onclick="viewImage('${escapeHtml(msg.attachment_url)}')">`;
+                        content += `<img src="${escapeHtml(msg.attachment_url)}" class="message-attachment" onclick="viewImage('${escapeHtml(msg.attachment_url)}')">`;
                     }
+                    content += `<div class="message-time">${time} ${status}</div>`;
                     
-                    bubbleContent += '</div>';
-                    
-                    messageEl.innerHTML = `
-                        <div>
-                            ${bubbleContent}
-                            <div class="message-time">${time}${statusIcon}</div>
-                        </div>
-                    `;
-                    
-                    messagesArea.appendChild(messageEl);
-                    lastMessageId = Math.max(lastMessageId, msg.id || 0);
+                    bubble.innerHTML = content;
+                    group.appendChild(bubble);
+                    messagesArea.appendChild(group);
                 });
 
-                // Scroll to bottom
                 messagesArea.scrollTop = messagesArea.scrollHeight;
-                
-                // Mark messages as read
                 markMessagesAsRead();
             } else {
-                // Just update status icons
-                const messageElements = messagesArea.querySelectorAll('.message');
-                messageElements.forEach((el, idx) => {
+                messagesArea.querySelectorAll('.message-group').forEach((el, idx) => {
                     if (messages[idx]) {
                         const msg = messages[idx];
                         const senderType = String(msg.sender_type).toLowerCase().trim();
                         const isCustomer = (senderType === 'customer');
                         
-                        const expectedClass = isCustomer ? 'customer' : 'admin';
-                        if (!el.classList.contains(expectedClass)) {
-                            el.className = `message ${expectedClass}`;
-                        }
-                        
                         if (isCustomer) {
                             const statusEl = el.querySelector('.message-status');
                             if (statusEl) {
-                                if (msg.is_read) {
-                                    statusEl.className = 'message-status status-read';
-                                    statusEl.textContent = '✓✓';
-                                } else {
-                                    statusEl.className = 'message-status status-sent';
-                                    statusEl.textContent = '✓';
-                                }
+                                statusEl.className = msg.is_read 
+                                    ? 'message-status status-read' 
+                                    : 'message-status status-sent';
+                                statusEl.textContent = msg.is_read ? '✓✓' : '✓';
                             }
                         }
                     }
@@ -720,128 +864,86 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         function updateInputAreaStatus(status) {
             const inputArea = document.getElementById('inputArea');
             const closedNotice = document.getElementById('closedNotice');
-            const messageForm = document.getElementById('messageForm');
+            const form = inputArea.querySelector('.message-input');
             
             if (status === 'closed') {
-                closedNotice.innerHTML = `
-                    <div class="closed-notice">
-                        🔒 Ticket ini sudah ditutup. Anda tidak bisa mengirim pesan lagi.
-                    </div>
-                `;
-                inputArea.classList.add('input-area-disabled');
-                messageForm.style.pointerEvents = 'none';
-                messageForm.style.opacity = '0.6';
+                closedNotice.innerHTML = `<div class="closed-notice">🔒 Tiket ditutup. Tidak bisa mengirim pesan.</div>`;
+                inputArea.classList.add('disabled');
+                form.style.pointerEvents = 'none';
             } else {
                 closedNotice.innerHTML = '';
-                inputArea.classList.remove('input-area-disabled');
-                messageForm.style.pointerEvents = 'auto';
-                messageForm.style.opacity = '1';
+                inputArea.classList.remove('disabled');
+                form.style.pointerEvents = 'auto';
             }
         }
         
         function markMessagesAsRead() {
             fetch('src/api/mark-read.php', {
                 method: 'POST',
-                body: JSON.stringify({
-                    ticket_number: TICKET_NUMBER,
-                    viewer_type: 'customer'
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).catch(error => console.error('Error:', error));
+                body: JSON.stringify({ ticket_number: TICKET_NUMBER, viewer_type: 'customer' }),
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.error('Error:', e));
         }
 
         function checkTypingStatus() {
-            // Check if someone is typing
             fetch(`src/api/typing-status.php?ticket_number=${TICKET_NUMBER}`)
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 const messagesArea = document.getElementById('messagesArea');
-                
-                // Jangan lakukan apapun jika tidak ada data atau empty state ditampilkan
                 if (!data.success || !data.data) {
-                    // Remove typing indicator jika ada
-                    const existingTyping = messagesArea.querySelector('.typing-indicator');
-                    if (existingTyping) {
-                        existingTyping.parentElement.remove();
-                    }
+                    messagesArea.querySelector('.typing-indicator')?.parentElement?.remove();
                     return;
                 }
                 
-                const senderType = data.data.sender_type;
-                const isTyping = data.data.is_typing;
-                
-                // Cari container typing indicator (parent dari typing-indicator div)
+                const { sender_type, is_typing } = data.data;
                 const typingContainer = messagesArea.querySelector('.typing-indicator')?.parentElement;
                 
-                if (isTyping && senderType === 'admin') {
-                    // Hanya tampilkan jika admin yang mengetik
-                    if (!typingContainer) {
-                        const typingEl = document.createElement('div');
-                        typingEl.className = 'message admin';
-                        typingEl.innerHTML = `
-                            <div>
-                                <div class="typing-indicator">
-                                    <div class="typing-dot"></div>
-                                    <div class="typing-dot"></div>
-                                    <div class="typing-dot"></div>
-                                </div>
-                                <div class="message-time">Admin Support sedang mengetik...</div>
+                if (is_typing && sender_type === 'admin' && !typingContainer) {
+                    const el = document.createElement('div');
+                    el.className = 'message-group admin';
+                    el.innerHTML = `
+                        <div class="message-bubble">
+                            <div class="typing-indicator">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
                             </div>
-                        `;
-                        messagesArea.appendChild(typingEl);
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
-                    }
-                } else {
-                    // Remove typing indicator jika admin tidak mengetik
-                    if (typingContainer) {
-                        typingContainer.remove();
-                    }
+                        </div>
+                    `;
+                    messagesArea.appendChild(el);
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                } else if (!is_typing && typingContainer) {
+                    typingContainer.remove();
                 }
             })
-            .catch(error => console.error('Error checking typing:', error));
+            .catch(e => console.error('Error:', e));
         }
 
         function updateTicketInfo(ticket) {
-            const statusBadge = document.getElementById('statusBadge');
-            const statusClass = `status-${ticket.status}`;
-            const statusLabel = getStatusLabel(ticket.status);
-            
-            statusBadge.textContent = statusLabel;
-            statusBadge.className = `status-badge ${statusClass}`;
+            const badge = document.getElementById('statusBadge');
+            const labels = { 'open': 'Terbuka', 'in_progress': 'Diproses', 'resolved': 'Selesai', 'closed': 'Ditutup' };
+            badge.textContent = labels[ticket.status] || ticket.status;
+            badge.className = `status-badge ${ticket.status}`;
         }
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // Validate file type
             if (!file.type.startsWith('image/')) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Tidak Valid',
-                    text: 'Hanya file gambar yang diizinkan (JPG, PNG, GIF, WebP)'
-                });
+                Swal.fire({ icon: 'error', title: 'File Tidak Valid', text: 'Hanya gambar yang diizinkan' });
                 return;
             }
 
-            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Terlalu Besar',
-                    text: 'Ukuran file maksimal 5MB'
-                });
+                Swal.fire({ icon: 'error', title: 'File Terlalu Besar', text: 'Maksimal 5MB' });
                 return;
             }
 
-            // Show preview
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 selectedFile = file;
-                const preview = document.getElementById('previewImage');
-                preview.src = e.target.result;
+                document.getElementById('previewImage').src = e.target.result;
                 document.getElementById('previewArea').classList.add('show');
             };
             reader.readAsDataURL(file);
@@ -856,113 +958,93 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         function sendMessage(event) {
             event.preventDefault();
             
-            // Check if ticket is closed
-            const statusBadge = document.getElementById('statusBadge');
-            if (statusBadge && statusBadge.textContent.includes('Ditutup')) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Ticket Ditutup',
-                    text: 'Anda tidak bisa mengirim pesan untuk ticket yang sudah ditutup'
-                });
+            if (currentTicketStatus === 'closed') {
+                Swal.fire({ icon: 'warning', title: 'Tiket Ditutup', text: 'Tidak bisa mengirim pesan' });
                 return;
             }
             
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
+            const message = textarea.value.trim();
+            if (!message && !selectedFile) return;
 
-            if (!message && !selectedFile) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pesan Kosong',
-                    text: 'Silakan ketik pesan atau pilih gambar'
-                });
-                return;
-            }
+            const btn = event.target;
+            btn.disabled = true;
 
-            const btn = event.target.closest('button') || document.querySelector('.send-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = '⏳ Mengirim...';
-            }
+            const form = new FormData();
+            form.append('ticket_number', TICKET_NUMBER);
+            form.append('message', message);
+            form.append('sender_type', 'customer');
+            if (selectedFile) form.append('attachment', selectedFile);
 
-            // Use FormData for file upload
-            const formData = new FormData();
-            formData.append('ticket_number', TICKET_NUMBER);
-            formData.append('message', message);
-            formData.append('sender_type', 'customer');
-            
-            if (selectedFile) {
-                formData.append('attachment', selectedFile);
-            }
-
-            fetch('src/api/send-message.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
+            fetch('src/api/send-message.php', { method: 'POST', body: form })
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    input.value = '';
-                    input.style.height = 'auto';
+                    textarea.value = '';
+                    textarea.style.height = 'auto';
                     removeFile();
-                    loadMessages(); // Refresh messages immediately
+                    loadMessages();
                     sendTypingStatus(false);
-                    
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal!', text: data.message });
+                }
+            })
+            .catch(e => Swal.fire({ icon: 'error', title: 'Error!', text: 'Jaringan error' }))
+            .finally(() => btn.disabled = false);
+        }
+
+        function closeTicket() {
+            if (currentTicketStatus === 'closed') {
+                Swal.fire({ icon: 'info', title: 'Tiket Sudah Ditutup', text: 'Tiket ini sudah ditutup sebelumnya' });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'question',
+                title: 'Akhiri Tiket?',
+                text: 'Tiket tidak bisa dikirim pesan lagi setelah ditutup.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Akhiri',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#999'
+            }).then(result => {
+                if (result.isConfirmed) updateTicketStatus('closed');
+            });
+        }
+
+        function updateTicketStatus(status) {
+            fetch('src/api/update-ticket-status.php', {
+                method: 'POST',
+                body: JSON.stringify({ ticket_number: TICKET_NUMBER, status }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pesan Terkirim!',
-                        text: 'Pesan Anda telah dikirim',
+                        title: 'Tiket Ditutup!',
                         timer: 1500,
                         showConfirmButton: false
-                    });
+                    }).then(() => loadMessages());
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: data.message || 'Gagal mengirim pesan'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Gagal!', text: data.message });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan!',
-                    text: 'Terjadi kesalahan jaringan'
-                });
-            })
-            .finally(() => {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '📤 Kirim';
-                }
-            });
+            .catch(e => Swal.fire({ icon: 'error', title: 'Error!', text: 'Jaringan error' }));
+        }
+
+        function showTicketInfo() {
+            Swal.fire({ icon: 'info', title: 'Informasi Tiket', html: `<div style="font-size:13px;text-align:left"><p><strong>Nomor:</strong> ${TICKET_NUMBER}</p></div>`, confirmButtonText: 'Tutup' });
         }
 
         function viewImage(url) {
-            Swal.fire({
-                imageUrl: url,
-                imageAlt: 'Lampiran',
-                confirmButtonText: 'Tutup',
-                showCloseButton: true
-            });
+            Swal.fire({ imageUrl: url, imageAlt: 'Lampiran', confirmButtonText: 'Tutup', showCloseButton: true });
         }
 
-        function getStatusLabel(status) {
-            const labels = {
-                'open': 'Terbuka',
-                'in_progress': 'Sedang Diproses',
-                'resolved': 'Terselesaikan',
-                'closed': 'Ditutup'
-            };
-            return labels[status] || status;
-        }
-
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${hours}:${minutes}`;
+        function formatTime(date) {
+            const d = new Date(date);
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
 
         function escapeHtml(text) {
@@ -971,22 +1053,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             return div.innerHTML;
         }
 
-        function showMessagesError(message) {
-            const messagesArea = document.getElementById('messagesArea');
-            messagesArea.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">❌</div>
-                    <p>${message}</p>
-                    <p style="font-size: 12px; margin-top: 10px;">Ticket tidak ditemukan atau terjadi kesalahan</p>
-                </div>
-            `;
-        }
-
-        // Cleanup interval when leaving page
         window.addEventListener('beforeunload', () => {
-            if (messageRefreshInterval) {
-                clearInterval(messageRefreshInterval);
-            }
+            clearInterval(messageRefreshInterval);
             sendTypingStatus(false);
         });
     </script>
