@@ -2,6 +2,8 @@
 /**
  * API: Mark Messages as Read
  * Helpdesk MTsN 11 Majalengka
+ * 
+ * Menggunakan unified admin-status helper
  */
 
 header('Content-Type: application/json');
@@ -9,6 +11,7 @@ header('Content-Type: application/json');
 require_once '../config/database.php';
 require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
+require_once '../helpers/admin-status.php';
 
 session_start();
 
@@ -32,29 +35,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Logic:
     // - Customer viewing → mark admin messages as read
-    // - Admin viewing → mark customer messages as read
-    $senderTypeToMark = ($viewerType === 'customer') ? 'admin' : 'customer';
+    // - Admin viewing → mark customer messages as read (handled by trackAdminViewing)
     
-    $query = "UPDATE messages 
-              SET is_read = TRUE 
-              WHERE ticket_id = ? 
-              AND sender_type = ? 
-              AND is_read = FALSE";
-    
-    $stmt = $conn->prepare($query);
-    
-    if (!$stmt) {
-        error_log("Prepare failed: " . $conn->error);
-        jsonResponse(false, 'Database error');
-    }
-    
-    $stmt->bind_param("is", $ticket['id'], $senderTypeToMark);
-    
-    if ($stmt->execute()) {
-        jsonResponse(true, 'Messages marked as read');
+    if ($viewerType === 'customer') {
+        // Customer marking admin messages as read
+        $senderTypeToMark = 'admin';
+        
+        $query = "UPDATE messages 
+                  SET is_read = TRUE 
+                  WHERE ticket_id = ? 
+                  AND sender_type = ? 
+                  AND is_read = FALSE";
+        
+        $stmt = $conn->prepare($query);
+        
+        if (!$stmt) {
+            error_log("Prepare failed: " . $conn->error);
+            jsonResponse(false, 'Database error');
+        }
+        
+        $stmt->bind_param("is", $ticket['id'], $senderTypeToMark);
+        
+        if ($stmt->execute()) {
+            jsonResponse(true, 'Messages marked as read');
+        } else {
+            error_log("Execute failed: " . $stmt->error);
+            jsonResponse(false, 'Error marking messages as read');
+        }
     } else {
-        error_log("Execute failed: " . $stmt->error);
-        jsonResponse(false, 'Error marking messages as read');
+        // Admin marking customer messages as read
+        // This is handled automatically by trackAdminViewing helper
+        jsonResponse(true, 'Messages marked as read');
     }
 }
 

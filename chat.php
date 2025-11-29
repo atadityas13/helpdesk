@@ -746,13 +746,15 @@ if ($ticket) {
             initEmojiPicker();
             loadMessages();
             updateAdminStatus();
-            trackAdminViewing(true); // Track bahwa user membuka chat
             
             textarea.addEventListener('input', () => sendTypingStatus(true));
             textarea.addEventListener('blur', () => sendTypingStatus(false));
             
-            messageRefreshInterval = setInterval(loadMessages, 2000);
-            adminStatusInterval = setInterval(updateAdminStatus, 3000);
+            // Refresh messages setiap 1.5 detik
+            messageRefreshInterval = setInterval(loadMessages, 1500);
+            
+            // Update admin status setiap 2 detik (lebih sering untuk deteksi real-time)
+            adminStatusInterval = setInterval(updateAdminStatus, 2000);
         });
 
         function trackAdminViewing(isViewing) {
