@@ -743,7 +743,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             fetch('src/api/mark-read.php', {
                 method: 'POST',
                 body: JSON.stringify({
-                    ticket_number: TICKET_NUMBER
+                    ticket_number: TICKET_NUMBER,
+                    viewer_type: 'customer'
                 }),
                 headers: {
                     'Content-Type': 'application/json'

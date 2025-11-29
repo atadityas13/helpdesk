@@ -62,9 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $messages = $result->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
     
-    // Ensure sender_type is returned correctly
+    // Ensure sender_type dan is_read format correct
     foreach ($messages as &$msg) {
-        // Pastikan sender_type adalah lowercase 'customer' atau 'admin'
         $msg['sender_type'] = strtolower($msg['sender_type']);
         $msg['is_read'] = (bool) $msg['is_read'];
     }

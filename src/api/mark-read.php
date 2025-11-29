@@ -10,11 +10,14 @@ require_once '../config/database.php';
 require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
 
+session_start();
+
 // Handle POST request - mark messages as read
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     
     $ticketNumber = sanitizeInput($input['ticket_number'] ?? '');
+    $viewerType = $input['viewer_type'] ?? ''; // 'customer' atau 'admin'
     
     if (empty($ticketNumber)) {
         jsonResponse(false, 'Ticket number is required');
@@ -27,17 +30,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jsonResponse(false, 'Ticket not found');
     }
     
-    // Mark all unread messages dari ADMIN sebagai dibaca (untuk customer view)
-    // Atau mark semua unread messages dari CUSTOMER sebagai dibaca (untuk admin view)
-    $query = "UPDATE messages SET is_read = TRUE 
-              WHERE ticket_id = ? AND is_read = FALSE";
+    // Logic:
+    // - Customer viewing → mark admin messages as read
+    // - Admin viewing → mark customer messages as read
+    $senderTypeToMark = ($viewerType === 'customer') ? 'admin' : 'customer';
+    
+    $query = "UPDATE messages 
+              SET is_read = TRUE 
+              WHERE ticket_id = ? 
+              AND sender_type = ? 
+              AND is_read = FALSE";
     
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $ticket['id']);
+    
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        jsonResponse(false, 'Database error');
+    }
+    
+    $stmt->bind_param("is", $ticket['id'], $senderTypeToMark);
     
     if ($stmt->execute()) {
         jsonResponse(true, 'Messages marked as read');
     } else {
+        error_log("Execute failed: " . $stmt->error);
         jsonResponse(false, 'Error marking messages as read');
     }
 }

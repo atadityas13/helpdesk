@@ -704,9 +704,31 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             .then(data => {
                 if (data.success && data.data) {
                     displayMessagesAdmin(data.data);
+                    // Mark messages as read untuk admin
+                    markMessagesAsReadAdmin();
                 }
             })
             .catch(error => console.error('Error loading messages:', error));
+        }
+
+        function markMessagesAsReadAdmin() {
+            if (!ticketIdAdmin) return;
+            
+            const ticketNumberEl = document.querySelector('.chat-header h3');
+            const ticketNumber = ticketNumberEl?.textContent.trim();
+            
+            if (!ticketNumber) return;
+            
+            fetch('../../src/api/mark-read.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ticket_number: ticketNumber,
+                    viewer_type: 'admin'
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).catch(error => console.error('Error:', error));
         }
 
         function displayMessagesAdmin(ticketData) {
@@ -723,7 +745,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 return;
             }
             
-            // Display messages dengan validasi sender_type
+            // Display messages dengan validasi sender_type dan status
             messages.forEach(msg => {
                 // Validate sender_type
                 if (!msg.sender_type) {
@@ -735,11 +757,23 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 const messageEl = document.createElement('div');
                 messageEl.className = `chat-message ${senderType}`;
                 
+                // Status untuk SEMUA pesan (customer dan admin)
                 let statusHtml = '';
-                if (senderType === 'customer' && msg.is_read) {
-                    statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
-                } else if (senderType === 'customer') {
-                    statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
+                
+                if (senderType === 'customer') {
+                    // Customer messages: tampilkan apakah sudah dibaca admin atau belum
+                    if (msg.is_read) {
+                        statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
+                    } else {
+                        statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
+                    }
+                } else if (senderType === 'admin') {
+                    // Admin messages: tampilkan apakah sudah dibaca customer atau belum
+                    if (msg.is_read) {
+                        statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca Customer</span>';
+                    } else {
+                        statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim ke Customer</span>';
+                    }
                 }
                 
                 let attachmentHtml = '';
