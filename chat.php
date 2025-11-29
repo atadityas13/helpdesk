@@ -166,8 +166,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
         
         .status-sending { color: #999; }
-        .status-sent { color: #667eea; }
-        .status-read { color: #28a745; }
+        .status-sent { color: #667eea; font-weight: bold; }
+        .status-read { color: #28a745; font-weight: bold; }
         
         .closed-notice {
             background: #fff3cd;
@@ -520,6 +520,11 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             textarea.addEventListener('blur', () => {
                 sendTypingStatus(false);
             });
+            
+            // Auto-refresh messages every 2 seconds to update status and typing indicator
+            messageRefreshInterval = setInterval(() => {
+                loadMessages();
+            }, 2000);
         });
 
         function initEmojiPicker() {
@@ -608,64 +613,96 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             // Update input area based on ticket status
             updateInputAreaStatus(ticket.status);
 
-            // Clear messages area
-            messagesArea.innerHTML = '';
-
-            if (messages.length === 0) {
-                messagesArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📝</div>
-                        <p>Belum ada pesan. Silakan kirim pesan Anda.</p>
-                    </div>
-                `;
-                markMessagesAsRead();
-                return;
-            }
-
-            // Display messages
-            messages.forEach(msg => {
-                const isCustomer = msg.sender_type === 'customer';
-                const messageEl = document.createElement('div');
-                messageEl.className = `message ${isCustomer ? 'customer' : 'admin'}`;
-                
-                const time = formatTime(msg.created_at);
-                let statusIcon = '';
-                
-                // Tambah status icon
-                if (isCustomer) {
-                    // For customer messages, show if admin has read them
-                    if (msg.is_read) {
-                        statusIcon = '<span class="message-status status-read">✓✓</span>';
-                    } else {
-                        statusIcon = '<span class="message-status status-sent">✓</span>';
-                    }
-                }
-                
-                let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;
-                
-                // Add attachment if exists
-                if (msg.attachment_url) {
-                    bubbleContent += `<br><img src="${escapeHtml(msg.attachment_url)}" class="message-attachment" onclick="viewImage('${escapeHtml(msg.attachment_url)}')">`;
-                }
-                
-                bubbleContent += '</div>';
-                
-                messageEl.innerHTML = `
-                    <div>
-                        ${bubbleContent}
-                        <div class="message-time">${time}${statusIcon}</div>
-                    </div>
-                `;
-                
-                messagesArea.appendChild(messageEl);
-                lastMessageId = Math.max(lastMessageId, msg.id || 0);
-            });
-
-            // Scroll to bottom
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            // Check if there are existing messages to avoid flickering
+            const existingMessages = messagesArea.querySelectorAll('.message');
+            const hasTypingIndicator = messagesArea.querySelector('.typing-indicator');
             
-            // Mark messages as read
-            markMessagesAsRead();
+            // Only clear and rebuild if message count changed or first load
+            if (existingMessages.length !== messages.length || existingMessages.length === 0) {
+                // Remove typing indicator temporarily
+                if (hasTypingIndicator) {
+                    hasTypingIndicator.remove();
+                }
+
+                messagesArea.innerHTML = '';
+
+                if (messages.length === 0) {
+                    messagesArea.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>Belum ada pesan. Silakan kirim pesan Anda.</p>
+                        </div>
+                    `;
+                    markMessagesAsRead();
+                    return;
+                }
+
+                // Display messages
+                messages.forEach(msg => {
+                    const isCustomer = msg.sender_type === 'customer';
+                    const messageEl = document.createElement('div');
+                    messageEl.className = `message ${isCustomer ? 'customer' : 'admin'}`;
+                    
+                    const time = formatTime(msg.created_at);
+                    let statusIcon = '';
+                    
+                    // Tambah status icon untuk customer messages
+                    if (isCustomer) {
+                        if (msg.is_read) {
+                            statusIcon = '<span class="message-status status-read">✓✓</span>';
+                        } else {
+                            statusIcon = '<span class="message-status status-sent">✓</span>';
+                        }
+                    }
+                    
+                    let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;
+                    
+                    // Add attachment if exists
+                    if (msg.attachment_url) {
+                        bubbleContent += `<br><img src="${escapeHtml(msg.attachment_url)}" class="message-attachment" onclick="viewImage('${escapeHtml(msg.attachment_url)}')">`;
+                    }
+                    
+                    bubbleContent += '</div>';
+                    
+                    messageEl.innerHTML = `
+                        <div>
+                            ${bubbleContent}
+                            <div class="message-time">${time}${statusIcon}</div>
+                        </div>
+                    `;
+                    
+                    messagesArea.appendChild(messageEl);
+                    lastMessageId = Math.max(lastMessageId, msg.id || 0);
+                });
+
+                // Scroll to bottom
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+                
+                // Mark messages as read
+                markMessagesAsRead();
+            } else {
+                // Just update status icons without rebuilding entire message list
+                const messageElements = messagesArea.querySelectorAll('.message');
+                messageElements.forEach((el, idx) => {
+                    if (messages[idx]) {
+                        const msg = messages[idx];
+                        const statusEl = el.querySelector('.message-status');
+                        
+                        // Update read status if this is a customer message
+                        if (msg.sender_type === 'customer') {
+                            if (statusEl) {
+                                if (msg.is_read) {
+                                    statusEl.className = 'message-status status-read';
+                                    statusEl.textContent = '✓✓';
+                                } else {
+                                    statusEl.className = 'message-status status-sent';
+                                    statusEl.textContent = '✓';
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
         
         function updateInputAreaStatus(status) {
@@ -703,7 +740,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
 
         function checkTypingStatus() {
-            // Check if someone is typing (only show if it's NOT me typing)
+            // Check if someone is typing
             fetch(`src/api/typing-status.php?ticket_number=${TICKET_NUMBER}`)
             .then(response => response.json())
             .then(data => {
@@ -712,13 +749,13 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 
                 if (data.success && data.data && data.data.is_typing) {
                     const senderType = data.data.sender_type;
+                    const senderName = senderType === 'admin' ? 'Admin Support' : 'Anda';
                     
                     // Only show typing indicator if it's from the OTHER person
-                    // Customer is viewing, so only show if ADMIN is typing
+                    // For user (customer): only show if ADMIN is typing
+                    // For admin: only show if CUSTOMER is typing
                     if (senderType === 'admin' && !existingTyping) {
                         const typingEl = document.createElement('div');
-                        const typingText = 'Admin Support sedang mengetik...';
-                        
                         typingEl.className = 'message admin';
                         typingEl.innerHTML = `
                             <div>
@@ -727,13 +764,14 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                                     <div class="typing-dot"></div>
                                     <div class="typing-dot"></div>
                                 </div>
-                                <div class="message-time">${typingText}</div>
+                                <div class="message-time">${senderName} sedang mengetik...</div>
                             </div>
                         `;
                         messagesArea.appendChild(typingEl);
                         messagesArea.scrollTop = messagesArea.scrollHeight;
                     }
                 } else {
+                    // Remove typing indicator if no one is typing
                     if (existingTyping) {
                         existingTyping.remove();
                     }
