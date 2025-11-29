@@ -15,16 +15,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(false, 'Invalid request method');
 }
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+// Check if it's multipart form data (with file) or JSON
+$input = [];
+if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') !== false) {
+    $input = $_POST;
+} else {
+    $input = json_decode(file_get_contents('php://input'), true);
+}
 
 // Validate input
 $ticketNumber = sanitizeInput($input['ticket_number'] ?? '');
 $message = sanitizeInput($input['message'] ?? '');
 $senderType = sanitizeInput($input['sender_type'] ?? 'customer');
 
-if (empty($ticketNumber) || empty($message)) {
-    jsonResponse(false, 'Ticket number and message are required');
+if (empty($ticketNumber) || (empty($message) && empty($_FILES['attachment']))) {
+    jsonResponse(false, 'Ticket number and message or attachment are required');
 }
 
 // Get ticket
@@ -43,8 +48,41 @@ if ($senderType === 'customer') {
     $senderId = $input['sender_id'] ?? 0;
 }
 
+// Handle file attachment
+$attachmentUrl = null;
+if (!empty($_FILES['attachment'])) {
+    $file = $_FILES['attachment'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    
+    // Validate file
+    if (!in_array($file['type'], $allowedTypes)) {
+        jsonResponse(false, 'Only image files are allowed (JPG, PNG, GIF, WebP)');
+    }
+    
+    if ($file['size'] > 5 * 1024 * 1024) { // 5MB max
+        jsonResponse(false, 'File size must not exceed 5MB');
+    }
+    
+    // Create uploads directory if not exists
+    $uploadsDir = __DIR__ . '/../../public/uploads';
+    if (!is_dir($uploadsDir)) {
+        mkdir($uploadsDir, 0755, true);
+    }
+    
+    // Generate unique filename
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'attachment_' . $ticket['id'] . '_' . time() . '.' . $ext;
+    $filepath = $uploadsDir . '/' . $filename;
+    
+    if (move_uploaded_file($file['tmp_name'], $filepath)) {
+        $attachmentUrl = 'public/uploads/' . $filename;
+    } else {
+        jsonResponse(false, 'Failed to upload file');
+    }
+}
+
 // Add message
-$result = addMessageToTicket($conn, $ticket['id'], $senderType, $senderId, $message);
+$result = addMessageToTicket($conn, $ticket['id'], $senderType, $senderId, $message, $attachmentUrl);
 
 if ($result['success']) {
     // Update ticket to in_progress if first message from admin
