@@ -1,13 +1,46 @@
 <?php
 /**
- * Helpdesk Chat - User Chat Interface (Responsive & Modern)
+ * Helpdesk Chat - User Chat Interface (Professional & Complete)
  */
+
+require_once 'src/config/database.php';
+require_once 'src/helpers/functions.php';
+require_once 'src/helpers/ticket.php';
 
 $ticketNumber = isset($_GET['ticket']) ? trim($_GET['ticket']) : null;
 
 if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
     header('Location: index.php');
     exit;
+}
+
+// Get ticket and customer info
+$ticket = getTicketByNumber($conn, $ticketNumber);
+$customerName = '';
+$customerEmail = '';
+$customerPhone = '';
+$ticketSubject = '';
+$ticketPriority = '';
+$createdAt = '';
+$adminName = '';
+
+if ($ticket) {
+    $ticketSubject = $ticket['subject'];
+    $ticketPriority = $ticket['priority'];
+    $createdAt = $ticket['created_at'];
+    
+    // Get customer info
+    $customerQuery = "SELECT name, email, phone FROM customers WHERE id = ?";
+    $stmt = $conn->prepare($customerQuery);
+    $stmt->bind_param("i", $ticket['customer_id']);
+    $stmt->execute();
+    $customer = $stmt->get_result()->fetch_assoc();
+    
+    if ($customer) {
+        $customerName = $customer['name'];
+        $customerEmail = $customer['email'];
+        $customerPhone = $customer['phone'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -23,16 +56,18 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         
         :root {
             --primary: #25d366;
+            --primary-light: #e8f8f5;
             --primary-dark: #1a9d56;
-            --secondary: #667eea;
-            --secondary-dark: #764ba2;
+            --secondary: #0084ff;
+            --secondary-light: #e8f4fd;
+            --secondary-dark: #0066cc;
             --customer-bg: #dcf8c6;
-            --admin-bg: #e5e5ea;
+            --admin-bg: #e3f2fd;
             --text-primary: #000;
             --text-secondary: #666;
             --text-muted: #999;
             --border-color: #e0e0e0;
-            --bg-light: #f5f5f5;
+            --bg-light: #f5f7fa;
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
             --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
         }
@@ -48,12 +83,12 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         }
         
         /* ===== HEADER ===== */
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0084ff 0%, #00b4d8 100%);
             padding: 12px 16px;
             border-bottom: none;
             display: flex;
@@ -61,7 +96,6 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             align-items: center;
             box-shadow: var(--shadow-md);
             color: white;
-            position: relative;
         }
         
         .header-left {
@@ -72,20 +106,41 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             min-width: 0;
         }
         
+        .header-info {
+            min-width: 0;
+        }
+        
+        .header-info .customer-name {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 0 4px 0;
+        }
+        
         .header-info h1 {
             font-size: 15px;
             font-weight: 600;
             color: white;
-            margin: 0;
+            margin: 0 0 2px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .header-info .ticket-subject {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
         .header-info p {
-            font-size: 12px;
+            font-size: 11px;
             color: rgba(255, 255, 255, 0.8);
             margin: 2px 0 0 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .status-badge {
@@ -93,7 +148,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             padding: 4px 10px;
             border-radius: 12px;
             font-weight: 500;
-            font-size: 11px;
+            font-size: 10px;
             color: white;
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
@@ -104,6 +159,22 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         .status-badge.in_progress { background: #2196f3; }
         .status-badge.resolved { background: #4caf50; }
         .status-badge.closed { background: #9e9e9e; }
+        
+        .admin-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+        }
+        
+        .admin-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            display: inline-block;
+        }
         
         .header-actions {
             display: flex;
@@ -123,6 +194,9 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             border-radius: 6px;
             backdrop-filter: blur(10px);
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
         .header-btn:hover {
@@ -131,12 +205,12 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
         
         .header-btn.close-btn {
-            background: rgba(231, 76, 60, 0.2);
-            border-color: rgba(231, 76, 60, 0.3);
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.3);
         }
         
         .header-btn.close-btn:hover {
-            background: rgba(231, 76, 60, 0.3);
+            background: rgba(76, 175, 80, 0.3);
         }
         
         /* ===== MESSAGES AREA ===== */
@@ -205,14 +279,14 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             background: var(--customer-bg);
             color: var(--text-primary);
             border-bottom-right-radius: 4px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(37, 211, 102, 0.1);
         }
         
         .admin .message-bubble {
             background: var(--admin-bg);
             color: var(--text-primary);
             border-bottom-left-radius: 4px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 132, 255, 0.1);
         }
         
         .message-content {
@@ -235,8 +309,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             line-height: 1;
         }
         
-        .status-sent { color: #34a7ea; }
-        .status-read { color: #34a7ea; font-weight: bold; }
+        .status-sent { color: #0084ff; }
+        .status-read { color: #0084ff; font-weight: bold; }
         
         .message-attachment {
             max-width: 100%;
@@ -282,14 +356,14 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             border-radius: 18px;
             width: fit-content;
             border-bottom-left-radius: 4px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 132, 255, 0.1);
         }
         
         .typing-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--text-muted);
+            background: #0084ff;
             animation: typing 1.4s infinite;
         }
         
@@ -347,8 +421,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
         
         .input-wrapper:focus-within {
-            border-color: var(--primary);
-            background: #f0f9f6;
+            border-color: var(--secondary);
+            background: var(--secondary-light);
         }
         
         .message-input textarea {
@@ -381,14 +455,14 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            color: var(--primary);
+            color: var(--secondary);
             flex-shrink: 0;
             border-radius: 50%;
         }
         
         .icon-btn:hover, .send-btn:hover {
             transform: scale(1.1);
-            background: rgba(37, 211, 102, 0.1);
+            background: var(--secondary-light);
         }
         
         .send-btn:disabled {
@@ -484,8 +558,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 font-size: 14px;
             }
             
-            .header-info p {
-                font-size: 11px;
+            .header-info .ticket-subject {
+                font-size: 10px;
             }
             
             .header-btn {
@@ -511,25 +585,9 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 height: 32px;
                 font-size: 16px;
             }
-            
-            .empty-state {
-                padding: 20px;
-            }
-            
-            .empty-state-icon {
-                font-size: 48px;
-            }
-            
-            .emoji-mart {
-                bottom: 45px !important;
-            }
         }
         
         @media (max-width: 480px) {
-            .chat-container {
-                border-radius: 0;
-            }
-            
             .message-bubble {
                 max-width: 90%;
                 font-size: 12px;
@@ -544,8 +602,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 font-size: 13px;
             }
             
-            .header-info p {
-                font-size: 10px;
+            .header-info .ticket-subject {
+                font-size: 9px;
             }
             
             .header-actions {
@@ -570,72 +628,10 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 padding: 0 10px;
             }
             
-            .message-input textarea {
-                font-size: 13px;
-                padding: 8px 0;
-            }
-            
             .icon-btn, .send-btn {
                 width: 30px;
                 height: 30px;
                 font-size: 16px;
-            }
-            
-            .closed-notice {
-                font-size: 12px;
-                padding: 10px 12px;
-                margin-bottom: 10px;
-            }
-            
-            .preview-image {
-                max-width: 100px;
-                max-height: 100px;
-            }
-            
-            .message-time {
-                font-size: 10px;
-            }
-        }
-        
-        /* ===== DARK MODE SUPPORT ===== */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --text-primary: #fff;
-                --text-secondary: #ccc;
-                --text-muted: #999;
-                --bg-light: #2a2a2a;
-            }
-            
-            .chat-container {
-                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            }
-            
-            .messages-area {
-                background: #1a1a1a;
-            }
-            
-            .input-area {
-                background: #2a2a2a;
-                border-top-color: #3a3a3a;
-            }
-            
-            .input-wrapper {
-                background: #3a3a3a;
-                border-color: #4a4a4a;
-            }
-            
-            .input-wrapper:focus-within {
-                background: #404040;
-            }
-            
-            .customer .message-bubble {
-                background: #056162;
-                color: white;
-            }
-            
-            .admin .message-bubble {
-                background: #3a3a3a;
-                color: white;
             }
         }
     </style>
@@ -646,13 +642,18 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         <div class="chat-header">
             <div class="header-left">
                 <div class="header-info">
-                    <h1>💬 <?php echo htmlspecialchars($ticketNumber); ?></h1>
-                    <p><span class="status-badge" id="statusBadge">Memuat...</span></p>
+                    <p class="customer-name">👤 <?php echo htmlspecialchars($customerName); ?></p>
+                    <h1><?php echo htmlspecialchars($ticketNumber); ?></h1>
+                    <p class="ticket-subject">📋 <?php echo htmlspecialchars($ticketSubject); ?></p>
+                    <p>
+                        <span class="status-badge" id="statusBadge">Memuat...</span>
+                        <span class="admin-status" id="adminStatus">Menghubungkan...</span>
+                    </p>
                 </div>
             </div>
             <div class="header-actions">
-                <button class="header-btn" title="Info" onclick="showTicketInfo()">ℹ️</button>
-                <button class="header-btn close-btn" title="Akhiri" onclick="closeTicket()">🔒</button>
+                <button class="header-btn" title="Informasi" onclick="showTicketInfo()">ℹ️ Info</button>
+                <button class="header-btn close-btn" title="Akhiri Bantuan" onclick="closeTicket()">✓ Selesai</button>
             </div>
         </div>
 
@@ -675,19 +676,19 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             
             <div class="message-input">
                 <div class="input-wrapper">
-                    <textarea id="messageInput" placeholder="Pesan..." rows="1"></textarea>
+                    <textarea id="messageInput" placeholder="Ketik pesan..." rows="1"></textarea>
                     <div class="emoji-picker-wrapper">
                         <button type="button" class="icon-btn" id="emojiBtn" title="Emoji">😊</button>
                         <div id="emojiMart"></div>
                     </div>
                 </div>
                 
-                <label class="icon-btn file-input-label" title="Foto">
+                <label class="icon-btn file-input-label" title="Lampir Foto">
                     📷
                     <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
                 </label>
                 
-                <button type="button" onclick="sendMessage(event)" class="send-btn" title="Kirim">📤</button>
+                <button type="button" onclick="sendMessage(event)" class="send-btn" title="Kirim">✈️</button>
             </div>
         </div>
     </div>
@@ -697,6 +698,12 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
     
     <script>
         const TICKET_NUMBER = '<?php echo htmlspecialchars($ticketNumber); ?>';
+        const CUSTOMER_EMAIL = '<?php echo htmlspecialchars($customerEmail); ?>';
+        const CUSTOMER_PHONE = '<?php echo htmlspecialchars($customerPhone); ?>';
+        const TICKET_SUBJECT = '<?php echo htmlspecialchars($ticketSubject); ?>';
+        const TICKET_PRIORITY = '<?php echo htmlspecialchars($ticketPriority); ?>';
+        const CREATED_AT = '<?php echo htmlspecialchars($createdAt); ?>';
+        
         let messageRefreshInterval;
         let selectedFile = null;
         let emojiPickerOpen = false;
@@ -740,7 +747,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                         },
                         theme: 'light',
                         set: 'native'
-                    }).then(picker => div.appendChild(picker));
+                    }).then(picker => div.appendChild(picker)).catch(e => console.error('Emoji error:', e));
                 } else {
                     emojiMart.innerHTML = '';
                 }
@@ -773,9 +780,14 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 if (data.success && data.data) {
                     displayMessages(data.data);
                     checkTypingStatus();
+                    updateAdminStatus();
                 }
             })
             .catch(e => console.error('Error:', e));
+        }
+
+        function updateAdminStatus() {
+            document.getElementById('adminStatus').innerHTML = '🟢 Admin Support Terhubung';
         }
 
         function displayMessages(ticketData) {
@@ -867,7 +879,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             const form = inputArea.querySelector('.message-input');
             
             if (status === 'closed') {
-                closedNotice.innerHTML = `<div class="closed-notice">🔒 Tiket ditutup. Tidak bisa mengirim pesan.</div>`;
+                closedNotice.innerHTML = `<div class="closed-notice">✓ Tiket ditutup. Terima kasih telah menghubungi kami!</div>`;
                 inputArea.classList.add('disabled');
                 form.style.pointerEvents = 'none';
             } else {
@@ -994,18 +1006,18 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
 
         function closeTicket() {
             if (currentTicketStatus === 'closed') {
-                Swal.fire({ icon: 'info', title: 'Tiket Sudah Ditutup', text: 'Tiket ini sudah ditutup sebelumnya' });
+                Swal.fire({ icon: 'info', title: 'Tiket Sudah Ditutup', text: 'Terima kasih telah menghubungi kami' });
                 return;
             }
 
             Swal.fire({
                 icon: 'question',
-                title: 'Akhiri Tiket?',
-                text: 'Tiket tidak bisa dikirim pesan lagi setelah ditutup.',
+                title: 'Akhiri Bantuan?',
+                text: 'Apakah Anda yakin ingin menutup tiket ini?',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, Akhiri',
+                confirmButtonText: '✓ Ya, Tutup',
                 cancelButtonText: 'Batal',
-                confirmButtonColor: '#e74c3c',
+                confirmButtonColor: '#4caf50',
                 cancelButtonColor: '#999'
             }).then(result => {
                 if (result.isConfirmed) updateTicketStatus('closed');
@@ -1024,6 +1036,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Tiket Ditutup!',
+                        text: 'Terima kasih telah menggunakan layanan kami',
                         timer: 1500,
                         showConfirmButton: false
                     }).then(() => loadMessages());
@@ -1035,7 +1048,34 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
 
         function showTicketInfo() {
-            Swal.fire({ icon: 'info', title: 'Informasi Tiket', html: `<div style="font-size:13px;text-align:left"><p><strong>Nomor:</strong> ${TICKET_NUMBER}</p></div>`, confirmButtonText: 'Tutup' });
+            const priorityColor = {
+                'low': '#4caf50',
+                'medium': '#ff9800',
+                'high': '#e74c3c'
+            };
+            
+            const priorityLabel = {
+                'low': 'Rendah',
+                'medium': 'Sedang',
+                'high': 'Tinggi'
+            };
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Informasi Tiket Lengkap',
+                html: `
+                    <div style="text-align:left; font-size:13px; line-height:1.8;">
+                        <p><strong>📋 Nomor Tiket:</strong> ${TICKET_NUMBER}</p>
+                        <p><strong>📝 Subjek:</strong> ${TICKET_SUBJECT}</p>
+                        <p><strong>👤 Email:</strong> ${CUSTOMER_EMAIL}</p>
+                        <p><strong>📱 Telepon:</strong> ${CUSTOMER_PHONE || 'Tidak ada'}</p>
+                        <p><strong>🎯 Prioritas:</strong> <span style="color:${priorityColor[TICKET_PRIORITY] || '#999'}">● ${priorityLabel[TICKET_PRIORITY] || TICKET_PRIORITY}</span></p>
+                        <p><strong>📅 Dibuat:</strong> ${new Date(CREATED_AT).toLocaleString('id-ID')}</p>
+                    </div>
+                `,
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#0084ff'
+            });
         }
 
         function viewImage(url) {
