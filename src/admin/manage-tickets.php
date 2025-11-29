@@ -32,6 +32,11 @@ if ($ticketId) {
     }
 }
 
+// Get unread message count for notification badge
+$unreadQuery = "SELECT COUNT(*) as unread FROM messages WHERE sender_type = 'customer' AND is_read = 0";
+$unreadResult = $conn->query($unreadQuery);
+$unreadCount = $unreadResult->fetch_assoc()['unread'];
+
 // Get all tickets
 $allTicketsQuery = "SELECT t.*, c.name, COUNT(m.id) as message_count
                     FROM tickets t
@@ -51,26 +56,31 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
     <link rel="stylesheet" href="../../public/css/dashboard.css">
     <link href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-logo">
-                <h2>🎓 Helpdesk</h2>
+                <h2><i class="fas fa-headset"></i> Helpdesk</h2>
+                <div class="sidebar-subtitle">MTsN 11 Majalengka</div>
             </div>
             <nav class="sidebar-nav">
                 <a href="dashboard.php" class="nav-item">
-                    <span>📊 Dashboard</span>
+                    <span><i class="fas fa-tachometer-alt"></i> Dashboard</span>
                 </a>
                 <a href="manage-tickets.php" class="nav-item active">
-                    <span>🎫 Kelola Tickets</span>
+                    <span><i class="fas fa-ticket-alt"></i> Kelola Tickets</span>
+                    <?php if ($unreadCount > 0): ?>
+                        <span class="notification-badge"><?php echo $unreadCount; ?></span>
+                    <?php endif; ?>
                 </a>
                 <a href="faqs.php" class="nav-item">
-                    <span>❓ FAQ</span>
+                    <span><i class="fas fa-question-circle"></i> FAQ</span>
                 </a>
                 <a href="../../logout.php" class="nav-item logout">
-                    <span>🚪 Logout</span>
+                    <span><i class="fas fa-sign-out-alt"></i> Logout</span>
                 </a>
             </nav>
         </aside>
@@ -78,12 +88,14 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         <!-- Main Content -->
         <main class="admin-content">
             <!-- Header -->
-            <header class="admin-header">
-                <h1>Kelola Tickets</h1>
-                <div class="admin-user">
-                    <span><?php echo $_SESSION['admin_username']; ?></span>
+            <div class="page-header">
+                <h1><i class="fas fa-comments"></i> Kelola Tickets <span class="admin-label"><?php echo $_SESSION['admin_username']; ?></span></h1>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="refreshTickets()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
-            </header>
+            </div>
 
             <!-- Tickets Layout -->
             <div class="tickets-layout">
@@ -103,27 +115,39 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 <div class="chat-panel">
                     <?php if ($selectedTicket): ?>
                         <div class="chat-header">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h3><?php echo $selectedTicket['ticket_number']; ?></h3>
-                                    <p><?php echo $selectedTicket['name']; ?> (<?php echo $selectedTicket['email']; ?>)</p>
+                            <div class="chat-header-left">
+                                <div class="customer-avatar">
+                                    <?php echo strtoupper(substr($selectedTicket['name'], 0, 1)); ?>
+                                </div>
+                                <div class="customer-info">
+                                    <h3><?php echo htmlspecialchars($selectedTicket['name']); ?></h3>
+                                    <p><?php echo htmlspecialchars($selectedTicket['email']); ?> • <?php echo htmlspecialchars($selectedTicket['phone']); ?></p>
+                                </div>
+                            </div>
+                            <div class="chat-header-right">
+                                <div class="ticket-info">
+                                    <span class="ticket-number"><?php echo $selectedTicket['ticket_number']; ?></span>
+                                    <span class="ticket-status-badge <?php echo $selectedTicket['status']; ?>">
+                                        <?php echo ucfirst(str_replace('_', ' ', $selectedTicket['status'])); ?>
+                                    </span>
                                 </div>
                                 <div class="status-buttons">
                                     <?php
                                     $statuses = [
-                                        'open' => ['label' => 'Terbuka', 'emoji' => '📂'],
-                                        'in_progress' => ['label' => 'Diproses', 'emoji' => '⏳'],
-                                        'resolved' => ['label' => 'Selesai', 'emoji' => '✅'],
-                                        'closed' => ['label' => 'Ditutup', 'emoji' => '🔒']
+                                        'open' => ['label' => 'Open', 'icon' => 'fas fa-folder-open'],
+                                        'in_progress' => ['label' => 'In Progress', 'icon' => 'fas fa-clock'],
+                                        'resolved' => ['label' => 'Resolved', 'icon' => 'fas fa-check-circle'],
+                                        'closed' => ['label' => 'Closed', 'icon' => 'fas fa-lock']
                                     ];
-                                    
+
                                     foreach ($statuses as $st => $info):
                                         $isActive = ($selectedTicket['status'] === $st) ? 'active' : '';
                                     ?>
-                                        <button type="button" 
+                                        <button type="button"
                                                 class="status-btn <?php echo $isActive; ?>"
-                                                onclick="updateTicketStatus(<?php echo $ticketId; ?>, '<?php echo $st; ?>')">
-                                            <?php echo $info['emoji']; ?> <?php echo $info['label']; ?>
+                                                onclick="updateTicketStatus(<?php echo $ticketId; ?>, '<?php echo $st; ?>')"
+                                                title="<?php echo $info['label']; ?>">
+                                            <i class="<?php echo $info['icon']; ?>"></i>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
@@ -566,6 +590,51 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             img.src = url;
             const w = window.open("");
             w.document.write(img.outerHTML);
+        }
+
+        function refreshTickets() {
+            location.reload();
+        }
+
+        // Real-time updates for ticket list
+        function initRealTimeUpdates() {
+            setInterval(() => {
+                // Check for new messages/tickets without full refresh
+                checkForTicketUpdates();
+            }, 5000);
+        }
+
+        function checkForTicketUpdates() {
+            fetch('../../src/api/get-admin-status.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.hasUpdates) {
+                        // Update notification badge
+                        updateNotificationBadge(data.unreadCount);
+                    }
+                })
+                .catch(err => console.error('Error checking updates:', err));
+        }
+
+        function updateNotificationBadge(count) {
+            const badge = document.querySelector('.notification-badge');
+            if (count > 0) {
+                if (badge) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    // Create badge if it doesn't exist
+                    const navItem = document.querySelector('.nav-item[href*="manage-tickets"]');
+                    if (navItem) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'notification-badge';
+                        newBadge.textContent = count;
+                        navItem.appendChild(newBadge);
+                    }
+                }
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
         }
 
         window.addEventListener('beforeunload', () => {

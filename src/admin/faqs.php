@@ -46,26 +46,28 @@ if (isset($_GET['delete'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola FAQ - Helpdesk MTsN 11 Majalengka</title>
     <link rel="stylesheet" href="../../public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-logo">
-                <h2>🎓 Helpdesk</h2>
+                <h2><i class="fas fa-headset"></i> Helpdesk</h2>
+                <div class="sidebar-subtitle">MTsN 11 Majalengka</div>
             </div>
             <nav class="sidebar-nav">
                 <a href="dashboard.php" class="nav-item">
-                    <span>📊 Dashboard</span>
+                    <span><i class="fas fa-tachometer-alt"></i> Dashboard</span>
                 </a>
                 <a href="manage-tickets.php" class="nav-item">
-                    <span>🎫 Kelola Tickets</span>
+                    <span><i class="fas fa-ticket-alt"></i> Kelola Tickets</span>
                 </a>
                 <a href="faqs.php" class="nav-item active">
-                    <span>❓ FAQ</span>
+                    <span><i class="fas fa-question-circle"></i> FAQ</span>
                 </a>
                 <a href="../../logout.php" class="nav-item logout">
-                    <span>🚪 Logout</span>
+                    <span><i class="fas fa-sign-out-alt"></i> Logout</span>
                 </a>
             </nav>
         </aside>
@@ -73,12 +75,14 @@ if (isset($_GET['delete'])) {
         <!-- Main Content -->
         <main class="admin-content">
             <!-- Header -->
-            <header class="admin-header">
-                <h1>Kelola FAQ</h1>
-                <div class="admin-user">
-                    <span><?php echo $_SESSION['admin_username']; ?></span>
+            <div class="page-header">
+                <h1><i class="fas fa-question-circle"></i> Kelola FAQ <span class="admin-label"><?php echo $_SESSION['admin_username']; ?></span></h1>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="refreshFAQs()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
-            </header>
+            </div>
 
             <!-- FAQ Container -->
             <div class="faq-container">
@@ -88,27 +92,46 @@ if (isset($_GET['delete'])) {
                     <?php if (count($faqs) > 0): ?>
                         <?php foreach ($faqs as $faq): ?>
                             <div class="faq-item">
-                                <div class="faq-item-question"><?php echo $faq['question']; ?></div>
-
-                                <?php if ($faq['category']): ?>
-                                    <div class="faq-item-category"><?php echo $faq['category']; ?></div>
-                                <?php endif; ?>
-
-                                <div class="faq-item-answer">
-                                    <?php echo substr($faq['answer'], 0, 150) . '...'; ?>
+                                <div class="faq-item-header">
+                                    <div class="faq-item-question">
+                                        <i class="fas fa-question-circle"></i>
+                                        <?php echo htmlspecialchars($faq['question']); ?>
+                                    </div>
+                                    <?php if ($faq['category']): ?>
+                                        <div class="faq-item-category">
+                                            <i class="fas fa-tag"></i>
+                                            <?php echo htmlspecialchars($faq['category']); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
-                                <div class="faq-item-actions">
-                                    <a href="?delete=<?php echo $faq['id']; ?>" 
-                                       class="btn-delete" 
-                                       onclick="return confirm('Hapus FAQ ini?')">
-                                        Hapus
-                                    </a>
+                                <div class="faq-item-answer">
+                                    <?php echo htmlspecialchars(substr($faq['answer'], 0, 200)) . (strlen($faq['answer']) > 200 ? '...' : ''); ?>
+                                </div>
+
+                                <div class="faq-item-meta">
+                                    <span class="faq-date">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <?php echo date('d M Y', strtotime($faq['created_at'])); ?>
+                                    </span>
+                                    <div class="faq-item-actions">
+                                        <button class="btn-edit" onclick="editFAQ(<?php echo $faq['id']; ?>)">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <a href="?delete=<?php echo $faq['id']; ?>"
+                                           class="btn-delete"
+                                           onclick="return confirm('Hapus FAQ ini?')">
+                                            <i class="fas fa-trash"></i> Hapus
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div class="no-faqs">Belum ada FAQ</div>
+                        <div class="no-faqs">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Belum ada FAQ</p>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -140,5 +163,44 @@ if (isset($_GET['delete'])) {
             </div>
         </main>
     </div>
+
+    <script>
+        function refreshFAQs() {
+            location.reload();
+        }
+
+        function clearForm() {
+            document.getElementById('faqForm').reset();
+        }
+
+        function editFAQ(id) {
+            // Placeholder for edit functionality
+            alert('Edit functionality will be implemented soon. FAQ ID: ' + id);
+        }
+
+        // Auto-resize textarea
+        document.getElementById('answer').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+
+        // Form validation
+        document.getElementById('faqForm').addEventListener('submit', function(e) {
+            const question = document.getElementById('question').value.trim();
+            const answer = document.getElementById('answer').value.trim();
+
+            if (question.length < 5) {
+                e.preventDefault();
+                alert('Pertanyaan harus minimal 5 karakter');
+                return;
+            }
+
+            if (answer.length < 10) {
+                e.preventDefault();
+                alert('Jawaban harus minimal 10 karakter');
+                return;
+            }
+        });
+    </script>
 </body>
 </html>
