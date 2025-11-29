@@ -573,7 +573,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 method: 'POST',
                 body: JSON.stringify({
                     ticket_number: TICKET_NUMBER,
-                    is_typing: isTyping
+                    is_typing: isTyping,
+                    sender_type: 'customer'
                 }),
                 headers: {
                     'Content-Type': 'application/json'
@@ -632,13 +633,17 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 const time = formatTime(msg.created_at);
                 let statusIcon = '';
                 
-                // Tambah status icon untuk pesan customer
+                // Tambah status icon
                 if (isCustomer) {
+                    // For customer messages, show if admin has read them
                     if (msg.is_read) {
                         statusIcon = '<span class="message-status status-read">✓✓</span>';
                     } else {
                         statusIcon = '<span class="message-status status-sent">✓</span>';
                     }
+                } else {
+                    // For admin messages, show ✓✓ since customer is reading them
+                    statusIcon = '<span class="message-status status-read">✓✓</span>';
                 }
                 
                 let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;
@@ -703,7 +708,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
         }
 
         function checkTypingStatus() {
-            // Check if admin is typing
+            // Check if someone is typing
             fetch(`src/api/typing-status.php?ticket_number=${TICKET_NUMBER}`)
             .then(response => response.json())
             .then(data => {
@@ -713,7 +718,10 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 if (data.success && data.data && data.data.is_typing) {
                     if (!existingTyping) {
                         const typingEl = document.createElement('div');
-                        typingEl.className = 'message admin';
+                        const senderType = data.data.sender_type;
+                        const typingText = senderType === 'admin' ? 'Admin Support sedang mengetik...' : 'Customer sedang mengetik...';
+                        
+                        typingEl.className = 'message ' + senderType;
                         typingEl.innerHTML = `
                             <div>
                                 <div class="typing-indicator">
@@ -721,7 +729,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                                     <div class="typing-dot"></div>
                                     <div class="typing-dot"></div>
                                 </div>
-                                <div class="message-time">${data.data.admin_name || 'Admin'} sedang mengetik...</div>
+                                <div class="message-time">${typingText}</div>
                             </div>
                         `;
                         messagesArea.appendChild(typingEl);

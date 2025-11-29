@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $ticketNumber = sanitizeInput($input['ticket_number'] ?? '');
     $isTyping = isset($input['is_typing']) ? (bool)$input['is_typing'] : false;
+    $senderType = sanitizeInput($input['sender_type'] ?? 'customer');
 
     if (empty($ticketNumber)) {
         jsonResponse(false, 'Ticket number is required');
@@ -34,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($isTyping) {
         $typingData = [
-            'admin_name' => 'Admin Support',
+            'sender_type' => $senderType,
             'ticket_id' => $ticket['id'],
             'timestamp' => time()
         ];
@@ -70,9 +71,9 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         // Check if typing status is still fresh (within last 5 seconds)
         if (time() - $typingData['timestamp'] < 5) {
-            jsonResponse(true, 'Admin is typing', [
+            jsonResponse(true, 'Someone is typing', [
                 'is_typing' => true,
-                'admin_name' => $typingData['admin_name']
+                'sender_type' => $typingData['sender_type']
             ]);
         } else {
             // Clean up old file

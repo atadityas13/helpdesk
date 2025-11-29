@@ -634,7 +634,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 method: 'POST',
                 body: JSON.stringify({
                     ticket_number: ticketNumber,
-                    is_typing: isTyping
+                    is_typing: isTyping,
+                    sender_type: 'admin'
                 }),
                 headers: {
                     'Content-Type': 'application/json'
@@ -658,15 +659,18 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                     if (!typingIndicator) return;
                     
                     if (data.success && data.data && data.data.is_typing) {
+                        const senderType = data.data.sender_type;
+                        const typingText = senderType === 'customer' ? 'Customer sedang mengetik...' : 'Admin sedang mengetik...';
+                        
                         if (!typingIndicator.innerHTML) {
                             typingIndicator.innerHTML = `
-                                <div class="chat-message customer">
+                                <div class="chat-message ${senderType}">
                                     <div class="typing-indicator">
                                         <div class="typing-dot"></div>
                                         <div class="typing-dot"></div>
                                         <div class="typing-dot"></div>
                                     </div>
-                                    <div class="chat-message-time">Customer sedang mengetik...</div>
+                                    <div class="chat-message-time">${typingText}</div>
                                 </div>
                             `;
                             const messagesArea = document.querySelector('.chat-messages');
@@ -685,8 +689,169 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             if (!file) return;
 
             if (!file.type.startsWith('image/')) {
-                alert('Hanya file gambar yang diizinkan');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Tidak Valid',
+                    text: 'Hanya file gambar yang diizinkan (JPG, PNG, GIF, WebP)'
+                });
                 return;
             }
 
-            if
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Terlalu Besar',
+                    text: 'Ukuran file maksimal 5MB'
+                });
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedFileAdmin = file;
+                const preview = document.getElementById('previewImageAdmin');
+                preview.src = e.target.result;
+                document.getElementById('previewAreaAdmin').classList.add('show');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeFileAdmin() {
+            selectedFileAdmin = null;
+            document.getElementById('fileInputAdmin').value = '';
+            document.getElementById('previewAreaAdmin').classList.remove('show');
+        }
+
+        function sendAdminMessage(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('adminMessageInput');
+            const message = input.value.trim();
+
+            if (!message && !selectedFileAdmin) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pesan Kosong',
+                    text: 'Silakan ketik pesan atau pilih gambar'
+                });
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Mengirim...';
+
+            const ticketNumberEl = document.querySelector('.chat-header h3');
+            const ticketNumber = ticketNumberEl?.textContent.trim();
+
+            // Use FormData for file upload
+            const formData = new FormData();
+            formData.append('ticket_number', ticketNumber);
+            formData.append('message', message);
+            formData.append('sender_type', 'admin');
+            
+            if (selectedFileAdmin) {
+                formData.append('attachment', selectedFileAdmin);
+            }
+
+            fetch('../../src/api/send-message.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    input.style.height = 'auto';
+                    removeFileAdmin();
+                    sendTypingStatusAdmin(false);
+                    
+                    // Reload page to show new message
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pesan Terkirim!',
+                        text: 'Pesan Anda telah dikirim',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal mengirim pesan'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan!',
+                    text: 'Terjadi kesalahan jaringan'
+                });
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = '📤 Kirim';
+            });
+        }
+
+        function updateTicketStatus(ticketId, status) {
+            fetch('../../src/api/update-ticket-status.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ticket_id: ticketId,
+                    status: status
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Status Berhasil Diubah!',
+                        text: 'Status ticket telah diperbarui',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    
+                    // Reload page to show updated status
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal mengubah status'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan!',
+                    text: 'Terjadi kesalahan jaringan'
+                });
+            });
+        }
+
+        function viewImage(url) {
+            Swal.fire({
+                imageUrl: url,
+                imageAlt: 'Lampiran',
+                confirmButtonText: 'Tutup',
+                showCloseButton: true
+            });
+        }
+    </script>
+</body>
+</html>
