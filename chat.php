@@ -900,7 +900,14 @@ if ($ticket) {
                     const time = formatTime(msg.created_at);
                     let status = '';
                     
+                    // Show read status for both customer and admin messages
                     if (isCustomer) {
+                        // Customer messages: show if read by admin
+                        status = msg.is_read 
+                            ? '<span class="message-status status-read">✓✓</span>' 
+                            : '<span class="message-status status-sent">✓</span>';
+                    } else {
+                        // Admin messages: show if read by customer
                         status = msg.is_read 
                             ? '<span class="message-status status-read">✓✓</span>' 
                             : '<span class="message-status status-sent">✓</span>';
@@ -927,16 +934,14 @@ if ($ticket) {
                     if (messages[idx]) {
                         const msg = messages[idx];
                         const senderType = String(msg.sender_type).toLowerCase().trim();
-                        const isCustomer = (senderType === 'customer');
                         
-                        if (isCustomer) {
-                            const statusEl = el.querySelector('.message-status');
-                            if (statusEl) {
-                                statusEl.className = msg.is_read 
-                                    ? 'message-status status-read' 
-                                    : 'message-status status-sent';
-                                statusEl.textContent = msg.is_read ? '✓✓' : '✓';
-                            }
+                        // Update status for both customer and admin messages
+                        const statusEl = el.querySelector('.message-status');
+                        if (statusEl) {
+                            statusEl.className = msg.is_read 
+                                ? 'message-status status-read' 
+                                : 'message-status status-sent';
+                            statusEl.textContent = msg.is_read ? '✓✓' : '✓';
                         }
                     }
                 });
