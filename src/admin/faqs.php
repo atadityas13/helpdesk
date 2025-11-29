@@ -44,7 +44,7 @@ if (isset($_GET['delete'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ Management - Helpdesk MTsN 11 Majalengka</title>
+    <title>Kelola FAQ - Helpdesk MTsN 11 Majalengka</title>
     <link rel="stylesheet" href="../../public/css/dashboard.css">
     <style>
         .faq-container {
@@ -208,7 +208,7 @@ if (isset($_GET['delete'])) {
         <main class="admin-content">
             <!-- Header -->
             <header class="admin-header">
-                <h1>FAQ Management</h1>
+                <h1>Kelola FAQ</h1>
                 <div class="admin-user">
                     <span><?php echo $_SESSION['admin_username']; ?></span>
                 </div>
@@ -216,16 +216,22 @@ if (isset($_GET['delete'])) {
 
             <!-- FAQ Container -->
             <div class="faq-container">
+                
                 <!-- FAQs List -->
                 <div class="faq-list">
                     <?php if (count($faqs) > 0): ?>
                         <?php foreach ($faqs as $faq): ?>
                             <div class="faq-item">
                                 <div class="faq-item-question"><?php echo $faq['question']; ?></div>
+
                                 <?php if ($faq['category']): ?>
                                     <div class="faq-item-category"><?php echo $faq['category']; ?></div>
                                 <?php endif; ?>
-                                <div class="faq-item-answer"><?php echo substr($faq['answer'], 0, 150) . '...'; ?></div>
+
+                                <div class="faq-item-answer">
+                                    <?php echo substr($faq['answer'], 0, 150) . '...'; ?>
+                                </div>
+
                                 <div class="faq-item-actions">
                                     <a href="?delete=<?php echo $faq['id']; ?>" 
                                        class="btn-delete" 
@@ -264,6 +270,7 @@ if (isset($_GET['delete'])) {
                         <button type="submit" class="btn-submit">Tambah FAQ</button>
                     </form>
                 </div>
+
             </div>
         </main>
     </div>

@@ -116,7 +116,7 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                         <thead>
                             <tr>
                                 <th>Nomor Ticket</th>
-                                <th>Customer</th>
+                                <th>Pengguna</th>
                                 <th>Subjek</th>
                                 <th>Status</th>
                                 <th>Pesan</th>
