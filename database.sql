@@ -1,10 +1,5 @@
 -- Helpdesk MTsN 11 Majalengka Database Schema
 -- =============================================
-
--- Create Database
-CREATE DATABASE IF NOT EXISTS helpdesk_mtsn11;
-USE helpdesk_mtsn11;
-
 -- Customers Table
 CREATE TABLE IF NOT EXISTS customers (
     id INT PRIMARY KEY AUTO_INCREMENT,

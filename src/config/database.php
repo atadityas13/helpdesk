@@ -5,9 +5,9 @@
  */
 
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'helpdesk_mtsn11');
+define('DB_USER', 'mtsnmaja_ataditya');
+define('DB_PASS', 'Admin021398');
+define('DB_NAME', 'mtsnmaja_helpdesk');
 
 try {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
