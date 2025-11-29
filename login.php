@@ -23,10 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $error = 'Username dan password harus diisi';
     } else {
+        // Debug: Log login attempt
+        error_log("Login attempt: username=$username");
+        
         if (verifyAdminPassword($conn, $username, $password)) {
             header('Location: src/admin/dashboard.php');
             exit;
         } else {
+            // Debug: Log failed attempt
+            error_log("Login failed: username=$username, password length=" . strlen($password));
             $error = 'Username atau password salah';
         }
     }
