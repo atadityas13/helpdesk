@@ -65,8 +65,9 @@ CREATE TABLE IF NOT EXISTS faqs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default admin (username: admin, password: password123)
+-- Hash generated with: password_hash('password123', PASSWORD_BCRYPT)
 INSERT INTO admins (username, password, email, role) 
-VALUES ('admin', '$2y$10$YIjlrBxvjRQa5.3KN0L2Ou6TqLkOTqw5ZZb5e5C5tC5e5C5e5C5e5C', 'admin@helpdesk.local', 'admin')
+VALUES ('admin', '$2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86.jL5rKlLa', 'admin@helpdesk.local', 'admin')
 ON DUPLICATE KEY UPDATE username=username;
 
 -- Create Indexes
