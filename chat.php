@@ -834,27 +834,22 @@ if ($ticket) {
 
         function updateAdminStatus() {
             fetch(`src/api/get-admin-status.php?ticket_number=${TICKET_NUMBER}`)
-            .then(r => r.json())
+            .then(r => r.json())  // Fix: hapus space sebelum r
             .then(data => {
                 if (data.success && data.data) {
                     const adminStatus = document.getElementById('adminStatus');
-                    const { admin_name, is_connected, status } = data.data;
+                    const { admin_name, is_connected } = data.data;
                     
                     if (admin_name && is_connected) {
-                        // Admin sedang membuka chat ini
-                        adminStatus.innerHTML = `<span style="font-weight:500;">🟢 ${admin_name}</span>`;
+                        adminStatus.innerHTML = `<span style="font-weight:500;">${admin_name}</span>`;
                         adminStatus.className = 'admin-status connected';
                         currentAdminName = admin_name;
-                    } else if (admin_name && !is_connected && status === 'previously_handled') {
-                        // Admin pernah menangani tapi tidak sedang membuka chat ini
-                        adminStatus.innerHTML = `<span>🔴 ${admin_name}</span>`;
+                    } else if (admin_name && !is_connected) {
+                        adminStatus.innerHTML = `<span>${admin_name}</span>`;
                         adminStatus.className = 'admin-status disconnected';
-                        currentAdminName = admin_name;
                     } else {
-                        // Belum ada admin yang menangani
                         adminStatus.innerHTML = 'Belum Ada Admin';
                         adminStatus.className = 'admin-status disconnected';
-                        currentAdminName = null;
                     }
                 }
             })
@@ -1101,7 +1096,7 @@ if ($ticket) {
                 body: JSON.stringify({ ticket_number: TICKET_NUMBER, status }),
                 headers: { 'Content-Type': 'application/json' }
             })
-            .then r => r.json())  // Fix: hapus space sebelum r
+            .then(r => r.json())  // Fix: hapus space sebelum r
             .then(data => {
                 if (data.success) {
                     Swal.fire({
