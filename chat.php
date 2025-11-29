@@ -641,9 +641,6 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                     } else {
                         statusIcon = '<span class="message-status status-sent">✓</span>';
                     }
-                } else {
-                    // For admin messages, show ✓✓ since customer is reading them
-                    statusIcon = '<span class="message-status status-read">✓✓</span>';
                 }
                 
                 let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;

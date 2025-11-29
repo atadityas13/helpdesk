@@ -570,8 +570,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             if (ticketIdAdmin) {
                 initEmojiPickerAdmin();
                 startTypingIndicator();
-                // Auto reload messages every 1 second to keep status updated
-                setInterval(loadMessagesAdmin, 1000);
+                // Auto reload messages every 1.5 seconds to keep status updated
+                setInterval(loadMessagesAdmin, 1500);
                 
                 adminTextarea?.addEventListener('input', () => {
                     sendTypingStatusAdmin(true);
@@ -657,16 +657,16 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 fetch(`../../src/api/typing-status.php?ticket_number=${ticketNumber}`)
                 .then(response => response.json())
                 .then(data => {
-                    const typingIndicator = document.getElementById('typingIndicatorAdmin');
-                    if (!typingIndicator) return;
+                    const typingContainer = document.getElementById('typingIndicatorAdmin');
+                    if (!typingContainer) return;
                     
                     if (data.success && data.data && data.data.is_typing) {
                         const senderType = data.data.sender_type;
                         
-                        // Only show typing indicator if CUSTOMER is typing (not admin)
+                        // Only show if CUSTOMER is typing (not admin)
                         if (senderType === 'customer') {
-                            if (!typingIndicator.innerHTML) {
-                                typingIndicator.innerHTML = `
+                            if (!typingContainer.innerHTML) {
+                                typingContainer.innerHTML = `
                                     <div class="chat-message customer">
                                         <div class="typing-indicator">
                                             <div class="typing-dot"></div>
@@ -680,14 +680,14 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                                 if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
                             }
                         } else {
-                            typingIndicator.innerHTML = '';
+                            typingContainer.innerHTML = '';
                         }
                     } else {
-                        typingIndicator.innerHTML = '';
+                        typingContainer.innerHTML = '';
                     }
                 })
                 .catch(error => console.error('Error checking typing:', error));
-            }, 1000);
+            }, 2000); // Check every 2 seconds to reduce server load
         }
 
         function loadMessagesAdmin() {
@@ -698,8 +698,71 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             
             if (!ticketNumber) return;
             
-            // Refresh messages to get latest status
-            location.reload();
+            // Fetch messages via API instead of reloading page
+            fetch(`../../src/api/get-messages.php?ticket_number=${ticketNumber}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    displayMessagesAdmin(data.data);
+                }
+            })
+            .catch(error => console.error('Error loading messages:', error));
+        }
+
+        function displayMessagesAdmin(ticketData) {
+            const messages = ticketData.messages || [];
+            const messagesArea = document.querySelector('.chat-messages');
+            
+            // Clear existing messages but keep typing indicator
+            const typingIndicator = messagesArea.querySelector('#typingIndicatorAdmin');
+            messagesArea.innerHTML = '';
+            
+            if (messages.length === 0) {
+                messagesArea.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Belum ada pesan</div>';
+                if (typingIndicator) messagesArea.appendChild(typingIndicator);
+                return;
+            }
+            
+            // Display messages
+            messages.forEach(msg => {
+                const messageEl = document.createElement('div');
+                messageEl.className = `chat-message ${msg.sender_type}`;
+                
+                let statusHtml = '';
+                if (msg.sender_type === 'customer' && msg.is_read) {
+                    statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
+                } else if (msg.sender_type === 'customer') {
+                    statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
+                }
+                
+                let attachmentHtml = '';
+                if (msg.attachment_url) {
+                    attachmentHtml = `<img src="../../${msg.attachment_url}" class="chat-message-attachment" onclick="viewImage('../../${msg.attachment_url}')">`;
+                }
+                
+                const timeStr = new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                
+                messageEl.innerHTML = `
+                    <div class="chat-message-sender">
+                        ${msg.sender_name}
+                        ${statusHtml}
+                    </div>
+                    <div>
+                        <div class="chat-message-content">${msg.message}${attachmentHtml}</div>
+                    </div>
+                    <div class="chat-message-time">${timeStr}</div>
+                `;
+                
+                messagesArea.appendChild(messageEl);
+            });
+            
+            // Re-add typing indicator at the end
+            if (typingIndicator) {
+                messagesArea.appendChild(typingIndicator);
+            }
+            
+            // Scroll to bottom
+            messagesArea.scrollTop = messagesArea.scrollHeight;
         }
 
         function handleFileSelectAdmin(event) {
