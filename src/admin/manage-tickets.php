@@ -723,15 +723,22 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 return;
             }
             
-            // Display messages
+            // Display messages dengan validasi sender_type
             messages.forEach(msg => {
+                // Validate sender_type
+                if (!msg.sender_type) {
+                    console.error('Message missing sender_type:', msg);
+                    return;
+                }
+                
+                const senderType = String(msg.sender_type).toLowerCase().trim();
                 const messageEl = document.createElement('div');
-                messageEl.className = `chat-message ${msg.sender_type}`;
+                messageEl.className = `chat-message ${senderType}`;
                 
                 let statusHtml = '';
-                if (msg.sender_type === 'customer' && msg.is_read) {
+                if (senderType === 'customer' && msg.is_read) {
                     statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
-                } else if (msg.sender_type === 'customer') {
+                } else if (senderType === 'customer') {
                     statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
                 }
                 

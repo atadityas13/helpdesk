@@ -11,91 +11,102 @@ require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
 
 // Handle POST request
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    jsonResponse(false, 'Invalid request method');
-}
-
-// Check if it's multipart form data (with file) or JSON
-$input = [];
-if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') !== false) {
-    $input = $_POST;
-} else {
-    $input = json_decode(file_get_contents('php://input'), true);
-}
-
-// Validate input
-$ticketNumber = sanitizeInput($input['ticket_number'] ?? '');
-$message = sanitizeInput($input['message'] ?? '');
-$senderType = sanitizeInput($input['sender_type'] ?? 'customer');
-
-if (empty($ticketNumber) || (empty($message) && empty($_FILES['attachment']))) {
-    jsonResponse(false, 'Ticket number and message or attachment are required');
-}
-
-// Get ticket
-$ticket = getTicketByNumber($conn, $ticketNumber);
-
-if (!$ticket) {
-    jsonResponse(false, 'Ticket not found');
-}
-
-// Determine sender ID
-$senderId = null;
-if ($senderType === 'customer') {
-    $senderId = $ticket['customer_id'];
-} else if ($senderType === 'admin') {
-    // In real scenario, get from session
-    $senderId = $input['sender_id'] ?? 0;
-}
-
-// Handle file attachment
-$attachmentUrl = null;
-if (!empty($_FILES['attachment'])) {
-    $file = $_FILES['attachment'];
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get input data (either from FormData or JSON)
+    $input = [];
     
-    // Validate file
-    if (!in_array($file['type'], $allowedTypes)) {
-        jsonResponse(false, 'Only image files are allowed (JPG, PNG, GIF, WebP)');
-    }
-    
-    if ($file['size'] > 5 * 1024 * 1024) { // 5MB max
-        jsonResponse(false, 'File size must not exceed 5MB');
-    }
-    
-    // Create uploads directory if not exists
-    $uploadsDir = __DIR__ . '/../../public/uploads';
-    if (!is_dir($uploadsDir)) {
-        mkdir($uploadsDir, 0755, true);
-    }
-    
-    // Generate unique filename
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'attachment_' . $ticket['id'] . '_' . time() . '.' . $ext;
-    $filepath = $uploadsDir . '/' . $filename;
-    
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        $attachmentUrl = 'public/uploads/' . $filename;
+    if (!empty($_POST)) {
+        // FormData dari browser
+        $input = $_POST;
+        if (isset($_FILES['attachment'])) {
+            $input['attachment'] = $_FILES['attachment'];
+        }
     } else {
-        jsonResponse(false, 'Failed to upload file');
+        // JSON dari API
+        $input = json_decode(file_get_contents('php://input'), true);
     }
-}
-
-// Add message
-$result = addMessageToTicket($conn, $ticket['id'], $senderType, $senderId, $message, $attachmentUrl);
-
-if ($result['success']) {
-    // Update ticket to in_progress if first message from admin
-    if ($senderType === 'admin') {
-        if ($ticket['status'] === 'open') {
-            updateTicketStatus($conn, $ticket['id'], 'in_progress');
+    
+    $ticketNumber = sanitizeInput($input['ticket_number'] ?? '');
+    $message = sanitizeInput($input['message'] ?? '');
+    $senderType = $input['sender_type'] ?? '';
+    $attachmentUrl = null;
+    
+    // Validasi input
+    if (empty($ticketNumber) || empty($message)) {
+        jsonResponse(false, 'Ticket number dan message harus diisi');
+    }
+    
+    if (empty($senderType) || !in_array($senderType, ['customer', 'admin'])) {
+        jsonResponse(false, 'Invalid sender type');
+    }
+    
+    // Get ticket by number
+    $ticket = getTicketByNumber($conn, $ticketNumber);
+    
+    if (!$ticket) {
+        jsonResponse(false, 'Ticket tidak ditemukan');
+    }
+    
+    // Handle file attachment jika ada
+    if (!empty($input['attachment']) && is_array($input['attachment'])) {
+        $file = $input['attachment'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (in_array($file['type'], $allowedTypes) && $file['size'] <= 5 * 1024 * 1024) {
+            $uploadsDir = __DIR__ . '/../../public/uploads';
+            if (!is_dir($uploadsDir)) {
+                mkdir($uploadsDir, 0755, true);
+            }
+            
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'attachment_' . $ticket['id'] . '_' . time() . '.' . $ext;
+            $filepath = $uploadsDir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                $attachmentUrl = 'public/uploads/' . $filename;
+            }
         }
     }
     
-    jsonResponse(true, 'Message sent successfully', [
-        'message_id' => $result['message_id']
-    ]);
+    // Insert message dengan sender_type yang benar
+    $query = "INSERT INTO messages (ticket_id, sender_type, sender_id, message, attachment_url, created_at) 
+              VALUES (?, ?, ?, ?, ?, NOW())";
+    
+    $stmt = $conn->prepare($query);
+    
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        jsonResponse(false, 'Database error');
+    }
+    
+    // sender_id: gunakan session admin_id jika admin, gunakan 0 untuk customer
+    $senderId = 0;
+    if ($senderType === 'admin' && isset($_SESSION['admin_id'])) {
+        $senderId = $_SESSION['admin_id'];
+    }
+    
+    $stmt->bind_param("isiss", $ticket['id'], $senderType, $senderId, $message, $attachmentUrl);
+    
+    if ($stmt->execute()) {
+        $messageId = $conn->insert_id;
+        
+        // Update ticket updated_at
+        $updateQuery = "UPDATE tickets SET updated_at = NOW() WHERE id = ?";
+        $updateStmt = $conn->prepare($updateQuery);
+        $updateStmt->bind_param("i", $ticket['id']);
+        $updateStmt->execute();
+        $updateStmt->close();
+        
+        jsonResponse(true, 'Message sent successfully', [
+            'message_id' => $messageId,
+            'sender_type' => $senderType
+        ]);
+    } else {
+        error_log("Execute failed: " . $stmt->error);
+        jsonResponse(false, 'Error saving message');
+    }
+    
 } else {
-    jsonResponse(false, $result['message'] ?? 'Error sending message');
+    jsonResponse(false, 'Invalid request method');
 }
 ?>

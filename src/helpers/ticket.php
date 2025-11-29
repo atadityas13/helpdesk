@@ -71,10 +71,13 @@ function createTicket($conn, $customerData, $subject, $message) {
  * Get ticket messages
  */
 function getTicketMessages($conn, $ticketId) {
-    $query = "SELECT m.*, 
-                     CASE WHEN m.sender_type = 'customer' THEN c.name ELSE a.username END as sender_name
+    $query = "SELECT m.*,
+                     CASE 
+                        WHEN m.sender_type = 'customer' THEN 'Customer'
+                        WHEN m.sender_type = 'admin' THEN COALESCE(a.username, 'Admin')
+                        ELSE 'Unknown'
+                     END as sender_name
               FROM messages m
-              LEFT JOIN customers c ON m.sender_type = 'customer' AND m.sender_id = c.id
               LEFT JOIN admins a ON m.sender_type = 'admin' AND m.sender_id = a.id
               WHERE m.ticket_id = ?
               ORDER BY m.created_at ASC";

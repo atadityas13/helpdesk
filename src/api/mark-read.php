@@ -27,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jsonResponse(false, 'Ticket not found');
     }
     
-    // Mark all unread messages from admin as read (for customer view)
+    // Mark all unread messages dari ADMIN sebagai dibaca (untuk customer view)
+    // Atau mark semua unread messages dari CUSTOMER sebagai dibaca (untuk admin view)
     $query = "UPDATE messages SET is_read = TRUE 
-              WHERE ticket_id = ? AND sender_type = 'admin' AND is_read = FALSE";
+              WHERE ticket_id = ? AND is_read = FALSE";
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $ticket['id']);

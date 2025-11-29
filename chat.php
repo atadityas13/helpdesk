@@ -639,15 +639,21 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
 
                 // Display messages
                 messages.forEach((msg, idx) => {
-                    // Determine if this is a customer message (sender_type should be 'customer')
-                    const isCustomer = msg.sender_type === 'customer';
+                    // Validate sender_type - STRICT CHECK
+                    if (!msg.sender_type) {
+                        console.error('Message missing sender_type:', msg);
+                        return;
+                    }
+                    
+                    const senderType = String(msg.sender_type).toLowerCase().trim();
+                    const isCustomer = (senderType === 'customer');
                     const messageEl = document.createElement('div');
                     messageEl.className = `message ${isCustomer ? 'customer' : 'admin'}`;
                     
                     const time = formatTime(msg.created_at);
                     let statusIcon = '';
                     
-                    // Tambah status icon untuk customer messages SAJA
+                    // Show status only for customer messages
                     if (isCustomer) {
                         if (msg.is_read) {
                             statusIcon = '<span class="message-status status-read">✓✓</span>';
@@ -658,7 +664,6 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                     
                     let bubbleContent = `<div class="message-bubble">${escapeHtml(msg.message)}`;
                     
-                    // Add attachment if exists
                     if (msg.attachment_url) {
                         bubbleContent += `<br><img src="${escapeHtml(msg.attachment_url)}" class="message-attachment" onclick="viewImage('${escapeHtml(msg.attachment_url)}')">`;
                     }
@@ -682,20 +687,19 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 // Mark messages as read
                 markMessagesAsRead();
             } else {
-                // Just update status icons without rebuilding entire message list
+                // Just update status icons
                 const messageElements = messagesArea.querySelectorAll('.message');
                 messageElements.forEach((el, idx) => {
                     if (messages[idx]) {
                         const msg = messages[idx];
-                        const isCustomer = msg.sender_type === 'customer';
+                        const senderType = String(msg.sender_type).toLowerCase().trim();
+                        const isCustomer = (senderType === 'customer');
                         
-                        // Update class name jika berubah
                         const expectedClass = isCustomer ? 'customer' : 'admin';
                         if (!el.classList.contains(expectedClass)) {
                             el.className = `message ${expectedClass}`;
                         }
                         
-                        // Update read status jika ini customer message
                         if (isCustomer) {
                             const statusEl = el.querySelector('.message-status');
                             if (statusEl) {
