@@ -7,18 +7,11 @@
 session_start();
 
 /**
- * Check if admin is logged in
- */
-function isAdminLoggedIn() {
-    return isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
-}
-
-/**
  * Require admin to be logged in
  * If not, redirect to login
  */
 function requireAdminLogin() {
-    if (!isAdminLoggedIn()) {
+    if (!isset($_SESSION['admin_id']) || empty($_SESSION['admin_id'])) {
         header('Location: ../login.php');
         exit;
     }
