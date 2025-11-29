@@ -9,6 +9,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Helpdesk - MTsN 11 Majalengka</title>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -287,8 +289,12 @@
                 </div>
                 
                 <div style="background: #f0f0f0; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                    <h3 style="color: #333; margin-bottom: 10px; font-size: 14px;">Pelacakan Ticket</h3>
-                    <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Jika Anda sudah memiliki nomor ticket, gunakan form di samping untuk melanjutkan chat.</p>
+                    <h3 style="color: #333; margin-bottom: 10px; font-size: 14px;">🔍 Pelacakan Ticket</h3>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Jika Anda sudah memiliki nomor ticket, masukkan di bawah ini untuk melanjutkan chat:</p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="trackingNumber" placeholder="TK-20251129-XXXXX" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        <button type="button" onclick="trackTicket()" style="padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px;">Tracking</button>
+                    </div>
                 </div>
 
                 <div style="text-align: center; padding: 15px; background: #f9f9f9; border-radius: 6px;">
@@ -401,40 +407,224 @@
         </div>
     </div>
 
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
     <script>
         function submitHelp(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
+            const form = event.target;
+            
+            // Show loading
+            Swal.fire({
+                title: 'Mengirim Bantuan...',
+                html: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: (modal) => {
+                    Swal.showLoading();
+                }
+            });
+            
+            const formData = {
+                name: form.name.value,
+                email: form.email.value,
+                phone: form.phone.value,
+                subject: form.subject.value,
+                message: form.message.value
+            };
             
             // Send to create-ticket API
             fetch('src/api/create-ticket.php', {
                 method: 'POST',
-                body: JSON.stringify({
-                    name: formData.get('name'),
-                    email: formData.get('email'),
-                    phone: formData.get('phone'),
-                    subject: formData.get('subject'),
-                    message: formData.get('message')
-                }),
+                body: JSON.stringify(formData),
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
-                if (data.ticket_number) {
-                    alert(`✅ Bantuan terkirim!\n\nNomor Ticket: ${data.ticket_number}\n\nSimpan nomor ini untuk melacak status bantuan Anda.`);
-                    document.getElementById('helpForm').reset();
-                    // Optionally redirect to chat with ticket number
-                    // window.location.href = `?ticket=${data.ticket_number}`;
+                if (data.success && data.data && data.data.ticket_number) {
+                    const ticketNumber = data.data.ticket_number;
+                    
+                    // Show success alert with options
+                    Swal.fire({
+                        icon: 'success',
+                        title: '✅ Bantuan Terkirim!',
+                        html: `
+                            <div style="text-align: left; margin: 20px 0;">
+                                <p style="color: #666; margin-bottom: 15px;">Nomor ticket Anda:</p>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                                    <input type="text" id="ticketNumberInput" value="${ticketNumber}" readonly style="
+                                        flex: 1;
+                                        padding: 10px 15px;
+                                        background: #f0f0f0;
+                                        border: 2px solid #667eea;
+                                        border-radius: 6px;
+                                        font-weight: 600;
+                                        font-size: 14px;
+                                        cursor: text;
+                                    ">
+                                    <button onclick="copyTicketNumber('${ticketNumber}')" style="
+                                        padding: 10px 20px;
+                                        background: #667eea;
+                                        color: white;
+                                        border: none;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                        transition: all 0.3s;
+                                    " onmouseover="this.style.background='#764ba2'" onmouseout="this.style.background='#667eea'">
+                                        📋 Salin
+                                    </button>
+                                </div>
+                                <p style="color: #999; font-size: 12px; margin-bottom: 15px;">Simpan nomor ini untuk melacak status bantuan Anda</p>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '💬 Lanjut ke Chat',
+                        cancelButtonText: '✓ Tutup',
+                        confirmButtonColor: '#667eea',
+                        cancelButtonColor: '#999',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirect to chat with ticket number
+                            startChatWithTicket(ticketNumber);
+                        }
+                        form.reset();
+                    });
                 } else {
-                    alert('❌ Gagal mengirim bantuan. Silakan coba lagi.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal mengirim bantuan. Silakan coba lagi.'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('❌ Terjadi kesalahan. Silakan coba lagi.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan!',
+                    text: 'Terjadi kesalahan jaringan. Silakan coba lagi.'
+                });
             });
+        }
+
+        function copyTicketNumber(ticketNumber) {
+            navigator.clipboard.writeText(ticketNumber).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Disalin!',
+                    text: 'Nomor ticket sudah disalin ke clipboard',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            });
+        }
+
+        function startChatWithTicket(ticketNumber) {
+            // Redirect to widget chat or chat page with ticket number
+            // This could be a dedicated chat page or using the floating widget
+            window.location.href = `index.php?chat=${ticketNumber}`;
+        }
+
+        function trackTicket() {
+            const ticketNumber = document.getElementById('trackingNumber').value.trim();
+            
+            if (!ticketNumber) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Nomor Ticket Kosong',
+                    text: 'Silakan masukkan nomor ticket terlebih dahulu'
+                });
+                return;
+            }
+            
+            // Validate ticket number format
+            if (!ticketNumber.match(/^TK-\d{8}-\d{5}$/)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format Tidak Valid',
+                    text: 'Format nomor ticket: TK-YYYYMMDD-XXXXX'
+                });
+                return;
+            }
+            
+            // Verify ticket exists
+            Swal.fire({
+                title: 'Melacak Ticket...',
+                html: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: (modal) => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`src/api/get-messages.php?ticket_number=${ticketNumber}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Ticket Ditemukan!',
+                        html: `
+                            <div style="text-align: left;">
+                                <p><strong>Nomor Ticket:</strong> ${data.data.ticket.ticket_number}</p>
+                                <p><strong>Subjek:</strong> ${data.data.ticket.subject}</p>
+                                <p><strong>Status:</strong> <span style="
+                                    display: inline-block;
+                                    padding: 5px 10px;
+                                    border-radius: 20px;
+                                    font-weight: 600;
+                                    background: ${getStatusColor(data.data.ticket.status)};
+                                    color: white;
+                                ">${getStatusLabel(data.data.ticket.status)}</span></p>
+                            </div>
+                        `,
+                        confirmButtonText: '💬 Buka Chat',
+                        confirmButtonColor: '#667eea'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            startChatWithTicket(ticketNumber);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ticket Tidak Ditemukan',
+                        text: 'Silakan periksa kembali nomor ticket Anda'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan!',
+                    text: 'Terjadi kesalahan saat melacak ticket'
+                });
+            });
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'open': '#FFA500',
+                'in_progress': '#2196F3',
+                'resolved': '#28a745',
+                'closed': '#6c757d'
+            };
+            return colors[status] || '#999';
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'open': 'Terbuka',
+                'in_progress': 'Sedang Diproses',
+                'resolved': 'Terselesaikan',
+                'closed': 'Ditutup'
+            };
+            return labels[status] || status;
         }
 
         function showCategory(category) {
