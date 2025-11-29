@@ -20,14 +20,26 @@ $ticketsQuery = "SELECT
 
 $stats = $conn->query($ticketsQuery)->fetch_assoc();
 
+// Filter status (optional)
+$statusFilter = $_GET['status'] ?? 'all';
+$allowedStatuses = ['all', 'open', 'in_progress', 'resolved', 'closed'];
+if (!in_array($statusFilter, $allowedStatuses, true)) {
+    $statusFilter = 'all';
+}
+
 // Get recent tickets
 $recentTicketsQuery = "SELECT t.*, c.name, c.email, COUNT(m.id) as message_count
                        FROM tickets t
                        JOIN customers c ON t.customer_id = c.id
-                       LEFT JOIN messages m ON t.id = m.ticket_id
-                       GROUP BY t.id
-                       ORDER BY t.updated_at DESC
-                       LIMIT 10";
+                       LEFT JOIN messages m ON t.id = m.ticket_id";
+
+if ($statusFilter !== 'all') {
+    $recentTicketsQuery .= " WHERE t.status = '" . $conn->real_escape_string($statusFilter) . "'";
+}
+
+$recentTicketsQuery .= " GROUP BY t.id
+                        ORDER BY t.updated_at DESC
+                        LIMIT 10";
 
 $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 ?>

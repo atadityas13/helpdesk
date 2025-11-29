@@ -881,10 +881,10 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                         if (data.success) {
                             Swal.fire({ icon: 'success', title: 'Status Diubah', text: `Status ticket telah diubah menjadi "${statusLabel}"` });
                             
-                            // Update status button
+                            // Update status button: hapus semua .active lalu aktifkan tombol sesuai status
                             document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
-                            document.querySelector(`.status-btn.active`).classList.remove('active');
-                            document.querySelector(`.status-btn[onclick*="${status}"]`).classList.add('active');
+                            const targetBtn = document.querySelector(`.status-btn[onclick*="${status}"]`);
+                            if (targetBtn) targetBtn.classList.add('active');
                         } else {
                             Swal.fire({ icon: 'error', title: 'Gagal Mengubah Status', text: data.message });
                         }
