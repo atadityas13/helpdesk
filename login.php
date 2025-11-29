@@ -18,13 +18,11 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitizeInput($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $password = $_POST['password'] ?? '';  // JANGAN sanitize password!
 
     if (empty($username) || empty($password)) {
         $error = 'Username dan password harus diisi';
     } else {
-        require_once 'src/helpers/functions.php';
-        
         if (verifyAdminPassword($conn, $username, $password)) {
             header('Location: src/admin/dashboard.php');
             exit;
