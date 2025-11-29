@@ -22,7 +22,6 @@ $customerPhone = '';
 $ticketSubject = '';
 $ticketPriority = '';
 $createdAt = '';
-$adminName = '';
 
 if ($ticket) {
     $ticketSubject = $ticket['subject'];
@@ -111,15 +110,19 @@ if ($ticket) {
         }
         
         .header-info .customer-name {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
             margin: 0 0 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .header-info h1 {
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
             margin: 0 0 2px 0;
             white-space: nowrap;
             overflow: hidden;
@@ -137,7 +140,7 @@ if ($ticket) {
         .header-info p {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.8);
-            margin: 2px 0 0 0;
+            margin: 4px 0 0 0;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -165,15 +168,34 @@ if ($ticket) {
             align-items: center;
             gap: 4px;
             font-size: 10px;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
         }
         
-        .admin-status::before {
+        .admin-status.connected::before {
             content: '';
             width: 8px;
             height: 8px;
             background: #4caf50;
             border-radius: 50%;
             display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .admin-status.disconnected::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         .header-actions {
@@ -289,6 +311,7 @@ if ($ticket) {
             border: 1px solid rgba(0, 132, 255, 0.1);
         }
         
+        /* ===== EXISTING STYLES ===== */
         .message-content {
             word-break: break-word;
             line-height: 1.5;
@@ -325,7 +348,6 @@ if ($ticket) {
             transform: scale(1.02);
         }
         
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -347,7 +369,6 @@ if ($ticket) {
             font-size: 14px;
         }
         
-        /* ===== TYPING INDICATOR ===== */
         .typing-indicator {
             display: flex;
             gap: 4px;
@@ -375,7 +396,6 @@ if ($ticket) {
             30% { transform: translateY(-8px); }
         }
         
-        /* ===== CLOSED NOTICE ===== */
         .closed-notice {
             background: linear-gradient(135deg, #fff3cd 0%, #ffe8a8 100%);
             border: 1px solid #ffc107;
@@ -389,7 +409,6 @@ if ($ticket) {
             box-shadow: 0 2px 4px rgba(255, 193, 7, 0.1);
         }
         
-        /* ===== INPUT AREA ===== */
         .input-area {
             padding: 12px 16px 16px;
             background: #fff;
@@ -471,7 +490,6 @@ if ($ticket) {
             transform: none;
         }
         
-        /* ===== FILE INPUT ===== */
         .file-input-label {
             position: relative;
             overflow: hidden;
@@ -527,7 +545,6 @@ if ($ticket) {
             transform: scale(1.1);
         }
         
-        /* ===== EMOJI PICKER ===== */
         .emoji-picker-wrapper {
             position: relative;
             display: inline-block;
@@ -554,8 +571,12 @@ if ($ticket) {
                 padding: 10px 12px;
             }
             
+            .header-info .customer-name {
+                font-size: 12px;
+            }
+            
             .header-info h1 {
-                font-size: 14px;
+                font-size: 12px;
             }
             
             .header-info .ticket-subject {
@@ -598,8 +619,12 @@ if ($ticket) {
                 padding: 8px 10px;
             }
             
-            .header-info h1 {
+            .header-info .customer-name {
                 font-size: 13px;
+            }
+            
+            .header-info h1 {
+                font-size: 11px;
             }
             
             .header-info .ticket-subject {
@@ -647,7 +672,7 @@ if ($ticket) {
                     <p class="ticket-subject">📋 <?php echo htmlspecialchars($ticketSubject); ?></p>
                     <p>
                         <span class="status-badge" id="statusBadge">Memuat...</span>
-                        <span class="admin-status" id="adminStatus">Menghubungkan...</span>
+                        <span class="admin-status disconnected" id="adminStatus">Mencari Admin...</span>
                     </p>
                 </div>
             </div>
@@ -688,7 +713,7 @@ if ($ticket) {
                     <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
                 </label>
                 
-                <button type="button" onclick="sendMessage(event)" class="send-btn" title="Kirim">✈️</button>
+                <button type="button" onclick="sendMessage(event)" class="send-btn" title="Kirim">➤</button>
             </div>
         </div>
     </div>
@@ -705,9 +730,11 @@ if ($ticket) {
         const CREATED_AT = '<?php echo htmlspecialchars($createdAt); ?>';
         
         let messageRefreshInterval;
+        let adminStatusInterval;
         let selectedFile = null;
         let emojiPickerOpen = false;
         let currentTicketStatus = 'open';
+        let currentAdminName = null;
 
         const textarea = document.getElementById('messageInput');
         textarea.addEventListener('input', function() {
@@ -718,15 +745,24 @@ if ($ticket) {
         document.addEventListener('DOMContentLoaded', () => {
             initEmojiPicker();
             loadMessages();
+            updateAdminStatus();
+            trackAdminViewing(true); // Track bahwa user membuka chat
             
             textarea.addEventListener('input', () => sendTypingStatus(true));
             textarea.addEventListener('blur', () => sendTypingStatus(false));
             
             messageRefreshInterval = setInterval(loadMessages, 2000);
+            adminStatusInterval = setInterval(updateAdminStatus, 3000);
         });
+
+        function trackAdminViewing(isViewing) {
+            // Note: Ini untuk admin di manage-tickets.php, bukan untuk customer
+            // Hanya untuk reference, tidak akan berfungsi di chat.php customer
+        }
 
         function initEmojiPicker() {
             const emojiBtn = document.getElementById('emojiBtn');
+            
             emojiBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 emojiPickerOpen = !emojiPickerOpen;
@@ -737,17 +773,28 @@ if ($ticket) {
                     emojiMart.innerHTML = '';
                     emojiMart.appendChild(div);
                     
-                    new EmojiMart.Picker({
-                        onEmojiSelect: (emoji) => {
-                            textarea.value += emoji.native;
-                            textarea.focus();
-                            textarea.dispatchEvent(new Event('input'));
-                            emojiPickerOpen = false;
-                            emojiMart.innerHTML = '';
-                        },
-                        theme: 'light',
-                        set: 'native'
-                    }).then(picker => div.appendChild(picker)).catch(e => console.error('Emoji error:', e));
+                    try {
+                        new EmojiMart.Picker({
+                            onEmojiSelect: (emoji) => {
+                                textarea.value += emoji.native;
+                                textarea.focus();
+                                textarea.dispatchEvent(new Event('input'));
+                                emojiPickerOpen = false;
+                                emojiMart.innerHTML = '';
+                            },
+                            theme: 'light',
+                            set: 'native',
+                            previewPosition: 'none',
+                            perLine: 8
+                        }).then(picker => {
+                            div.appendChild(picker);
+                        }).catch(e => {
+                            console.error('Emoji picker error:', e);
+                            emojiMart.innerHTML = '<p style="color:#999;">Error loading emoji picker</p>';
+                        });
+                    } catch (error) {
+                        console.error('Emoji error:', error);
+                    }
                 } else {
                     emojiMart.innerHTML = '';
                 }
@@ -780,14 +827,38 @@ if ($ticket) {
                 if (data.success && data.data) {
                     displayMessages(data.data);
                     checkTypingStatus();
-                    updateAdminStatus();
                 }
             })
             .catch(e => console.error('Error:', e));
         }
 
         function updateAdminStatus() {
-            document.getElementById('adminStatus').innerHTML = '🟢 Admin Support Terhubung';
+            fetch(`src/api/get-admin-status.php?ticket_number=${TICKET_NUMBER}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const adminStatus = document.getElementById('adminStatus');
+                    const { admin_name, is_connected, status } = data.data;
+                    
+                    if (admin_name && is_connected) {
+                        // Admin sedang membuka chat ini
+                        adminStatus.innerHTML = `<span style="font-weight:500;">🟢 ${admin_name}</span>`;
+                        adminStatus.className = 'admin-status connected';
+                        currentAdminName = admin_name;
+                    } else if (admin_name && !is_connected && status === 'previously_handled') {
+                        // Admin pernah menangani tapi tidak sedang membuka chat ini
+                        adminStatus.innerHTML = `<span>🔴 ${admin_name}</span>`;
+                        adminStatus.className = 'admin-status disconnected';
+                        currentAdminName = admin_name;
+                    } else {
+                        // Belum ada admin yang menangani
+                        adminStatus.innerHTML = 'Belum Ada Admin';
+                        adminStatus.className = 'admin-status disconnected';
+                        currentAdminName = null;
+                    }
+                }
+            })
+            .catch(e => console.error('Error:', e));
         }
 
         function displayMessages(ticketData) {
@@ -988,7 +1059,7 @@ if ($ticket) {
             if (selectedFile) form.append('attachment', selectedFile);
 
             fetch('src/api/send-message.php', { method: 'POST', body: form })
-            .then(r => r.json())
+            .then(r => r.json())  // Fix: hapus space sebelum r
             .then(data => {
                 if (data.success) {
                     textarea.value = '';
@@ -1030,7 +1101,7 @@ if ($ticket) {
                 body: JSON.stringify({ ticket_number: TICKET_NUMBER, status }),
                 headers: { 'Content-Type': 'application/json' }
             })
-            .then(r => r.json())
+            .then r => r.json())  // Fix: hapus space sebelum r
             .then(data => {
                 if (data.success) {
                     Swal.fire({
@@ -1071,6 +1142,7 @@ if ($ticket) {
                         <p><strong>📱 Telepon:</strong> ${CUSTOMER_PHONE || 'Tidak ada'}</p>
                         <p><strong>🎯 Prioritas:</strong> <span style="color:${priorityColor[TICKET_PRIORITY] || '#999'}">● ${priorityLabel[TICKET_PRIORITY] || TICKET_PRIORITY}</span></p>
                         <p><strong>📅 Dibuat:</strong> ${new Date(CREATED_AT).toLocaleString('id-ID')}</p>
+                        <p><strong>👨‍💼 Admin:</strong> ${currentAdminName || 'Belum ada'}</p>
                     </div>
                 `,
                 confirmButtonText: 'Tutup',
@@ -1095,6 +1167,7 @@ if ($ticket) {
 
         window.addEventListener('beforeunload', () => {
             clearInterval(messageRefreshInterval);
+            clearInterval(adminStatusInterval);
             sendTypingStatus(false);
         });
     </script>

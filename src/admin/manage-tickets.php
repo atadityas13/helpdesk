@@ -31,45 +31,6 @@ if ($ticketId) {
     }
 }
 
-// Handle message submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $ticketId) {
-    $message = sanitizeInput($_POST['message'] ?? '');
-    $attachmentUrl = null;
-    
-    // Handle file attachment
-    if (!empty($_FILES['attachment'])) {
-        $file = $_FILES['attachment'];
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        
-        if (in_array($file['type'], $allowedTypes) && $file['size'] <= 5 * 1024 * 1024) {
-            $uploadsDir = __DIR__ . '/../../public/uploads';
-            if (!is_dir($uploadsDir)) {
-                mkdir($uploadsDir, 0755, true);
-            }
-            
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'attachment_' . $ticketId . '_' . time() . '.' . $ext;
-            $filepath = $uploadsDir . '/' . $filename;
-            
-            if (move_uploaded_file($file['tmp_name'], $filepath)) {
-                $attachmentUrl = 'public/uploads/' . $filename;
-            }
-        }
-    }
-    
-    if (!empty($message) || $attachmentUrl) {
-        addMessageToTicket($conn, $ticketId, 'admin', $_SESSION['admin_id'], $message, $attachmentUrl);
-        
-        // Update status if needed
-        if ($selectedTicket['status'] === 'open') {
-            updateTicketStatus($conn, $ticketId, 'in_progress');
-        }
-        
-        header("Location: manage-tickets.php?ticket={$ticketId}");
-        exit;
-    }
-}
-
 // Get all tickets
 $allTicketsQuery = "SELECT t.*, c.name, COUNT(m.id) as message_count
                     FROM tickets t
@@ -80,7 +41,6 @@ $allTicketsQuery = "SELECT t.*, c.name, COUNT(m.id) as message_count
 
 $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -88,11 +48,10 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Tickets - Helpdesk MTsN 11 Majalengka</title>
     <link rel="stylesheet" href="../../public/css/dashboard.css">
-    <!-- EmojiMart CSS -->
     <link href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
+        /* ...existing styles... */
         .tickets-layout {
             display: grid;
             grid-template-columns: 300px 1fr;
@@ -105,6 +64,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             border-radius: 8px;
             overflow-y: auto;
             max-height: 600px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .ticket-item {
@@ -122,13 +82,13 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         }
 
         .ticket-item.active {
-            background: #f0f0ff;
-            border-left: 3px solid #667eea;
+            background: #e8f4fd;
+            border-left: 3px solid #0084ff;
         }
 
         .ticket-item-number {
             font-weight: 600;
-            color: #667eea;
+            color: #0084ff;
             font-size: 13px;
         }
 
@@ -152,12 +112,13 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .chat-header {
             padding: 16px;
             border-bottom: 1px solid #f0f0f0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0084ff 0%, #00b4d8 100%);
             color: white;
             border-radius: 8px 8px 0 0;
         }
@@ -177,7 +138,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            background: #f8f9fa;
+            background: #fff;
         }
 
         .chat-message {
@@ -210,14 +171,14 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         }
 
         .chat-message.customer .chat-message-content {
-            background: #667eea;
-            color: white;
+            background: #dcf8c6;
+            color: #000;
             border-bottom-right-radius: 4px;
         }
 
         .chat-message.admin .chat-message-content {
-            background: #e5e5e5;
-            color: #333;
+            background: #e3f2fd;
+            color: #000;
             border-bottom-left-radius: 4px;
         }
 
@@ -238,26 +199,22 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             display: flex;
             gap: 4px;
             padding: 10px 12px;
-            background: #e5e5e5;
+            background: #e3f2fd;
             border-radius: 12px;
             width: fit-content;
+            border-bottom-left-radius: 4px;
         }
 
         .typing-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #999;
+            background: #0084ff;
             animation: typing 1.4s infinite;
         }
 
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
         @keyframes typing {
             0%, 60%, 100% { transform: translateY(0); }
@@ -295,8 +252,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 
         .chat-form textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #0084ff;
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.1);
         }
 
         .icon-btn-admin {
@@ -315,14 +272,14 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         }
 
         .icon-btn-admin:hover {
-            background: #667eea;
+            background: #0084ff;
             color: white;
-            border-color: #667eea;
+            border-color: #0084ff;
         }
 
         .btn-send {
             padding: 10px 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0084ff 0%, #00b4d8 100%);
             color: white;
             border: none;
             border-radius: 6px;
@@ -333,7 +290,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 
         .btn-send:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4);
         }
 
         .emoji-picker-wrapper-admin {
@@ -393,12 +350,6 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             line-height: 1;
         }
 
-        .chat-message-time {
-            font-size: 11px;
-            color: #999;
-            padding: 0 8px;
-        }
-
         .no-ticket {
             display: flex;
             align-items: center;
@@ -406,6 +357,33 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             min-height: 400px;
             color: #999;
             font-size: 16px;
+        }
+
+        .status-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .status-btn {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .status-btn.active {
+            background: #0084ff;
+            color: white;
+        }
+
+        .status-btn:hover {
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -465,12 +443,12 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                                     <h3><?php echo $selectedTicket['ticket_number']; ?></h3>
                                     <p><?php echo $selectedTicket['name']; ?> (<?php echo $selectedTicket['email']; ?>)</p>
                                 </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                                <div class="status-buttons">
                                     <?php
                                     $statuses = [
                                         'open' => ['label' => 'Terbuka', 'emoji' => '📂'],
-                                        'in_progress' => ['label' => 'Sedang Diproses', 'emoji' => '⏳'],
-                                        'resolved' => ['label' => 'Terselesaikan', 'emoji' => '✅'],
+                                        'in_progress' => ['label' => 'Diproses', 'emoji' => '⏳'],
+                                        'resolved' => ['label' => 'Selesai', 'emoji' => '✅'],
                                         'closed' => ['label' => 'Ditutup', 'emoji' => '🔒']
                                     ];
                                     
@@ -478,8 +456,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                                         $isActive = ($selectedTicket['status'] === $st) ? 'active' : '';
                                     ?>
                                         <button type="button" 
-                                                onclick="updateTicketStatus(<?php echo $ticketId; ?>, '<?php echo $st; ?>')"
-                                                style="padding: 6px 12px; background: <?php echo ($selectedTicket['status'] === $st) ? '#667eea' : '#f0f0f0'; ?>; color: <?php echo ($selectedTicket['status'] === $st) ? 'white' : '#333'; ?>; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;">
+                                                class="status-btn <?php echo $isActive; ?>"
+                                                onclick="updateTicketStatus(<?php echo $ticketId; ?>, '<?php echo $st; ?>')">
                                             <?php echo $info['emoji']; ?> <?php echo $info['label']; ?>
                                         </button>
                                     <?php endforeach; ?>
@@ -493,7 +471,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                                     <div class="chat-message-sender">
                                         <?php echo $msg['sender_name']; ?>
                                         <?php if ($msg['sender_type'] === 'customer' && $msg['is_read']): ?>
-                                            <span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>
+                                            <span style="color: #4caf50; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>
                                         <?php elseif ($msg['sender_type'] === 'customer'): ?>
                                             <span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>
                                         <?php endif; ?>
@@ -528,11 +506,11 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                                     </div>
                                     
                                     <label class="icon-btn-admin file-input-label-admin" title="Lampirkan gambar">
-                                        📎
+                                        📷
                                         <input type="file" id="fileInputAdmin" accept="image/*" onchange="handleFileSelectAdmin(event)">
                                     </label>
                                     
-                                    <button type="button" onclick="sendAdminMessage(event)" class="btn-send">Kirim</button>
+                                    <button type="button" onclick="sendAdminMessage(event)" class="btn-send">➤ Kirim</button>
                                 </div>
                             </form>
                         </div>
@@ -546,17 +524,17 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         </main>
     </div>
 
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    
-    <!-- EmojiMart JS -->
     <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     
     <script>
         let selectedFileAdmin = null;
         let emojiPickerOpenAdmin = false;
         const ticketIdAdmin = <?php echo $ticketId ?? 'null'; ?>;
+        const ticketNumberAdmin = '<?php echo htmlspecialchars($selectedTicket['ticket_number'] ?? ''); ?>';
         let typingTimeoutAdmin;
+        let messageRefreshIntervalAdmin;
+        let currentlyViewingTicket = ticketNumberAdmin;
 
         const adminTextarea = document.getElementById('adminMessageInput');
         if (adminTextarea) {
@@ -569,9 +547,14 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         document.addEventListener('DOMContentLoaded', () => {
             if (ticketIdAdmin) {
                 initEmojiPickerAdmin();
-                startTypingIndicator();
-                // Auto reload messages every 1.5 seconds to keep status updated
-                setInterval(loadMessagesAdmin, 1500);
+                startTypingIndicatorAdmin();
+                
+                // Track viewing untuk ticket yang dipilih
+                trackAdminViewing(true);
+                
+                loadMessagesAdmin();
+                
+                messageRefreshIntervalAdmin = setInterval(loadMessagesAdmin, 1500);
                 
                 adminTextarea?.addEventListener('input', () => {
                     sendTypingStatusAdmin(true);
@@ -581,7 +564,37 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                     }, 3000);
                 });
             }
+            
+            // Setup untuk track ketika user klik ticket lain
+            setupTicketNavigation();
         });
+
+        function setupTicketNavigation() {
+            document.querySelectorAll('.ticket-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // Stop tracking ticket sebelumnya LANGSUNG tanpa delay
+                    if (currentlyViewingTicket) {
+                        trackAdminViewing(false);
+                    }
+                    
+                    // Biarkan navigasi berjalan normal (tidak perlu preventDefault)
+                    // Link akan pindah ke ticket baru
+                });
+            });
+        }
+
+        function trackAdminViewing(isViewing) {
+            if (!ticketNumberAdmin) return;
+            
+            fetch('../../src/api/admin-viewing.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ticket_number: ticketNumberAdmin,
+                    is_viewing: isViewing
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.error('Error tracking view:', e));
+        }
 
         function initEmojiPickerAdmin() {
             const emojiBtnAdmin = document.getElementById('emojiAdminBtn');
@@ -597,20 +610,23 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                     emojiMartAdmin.innerHTML = '';
                     emojiMartAdmin.appendChild(divAdmin);
                     
-                    new EmojiMart.Picker({
-                        onEmojiSelect: (emoji) => {
-                            const currentText = adminTextarea.value;
-                            adminTextarea.value = currentText + emoji.native;
-                            adminTextarea.focus();
-                            adminTextarea.dispatchEvent(new Event('input'));
-                            emojiPickerOpenAdmin = false;
-                            emojiMartAdmin.innerHTML = '';
-                        },
-                        theme: 'light',
-                        set: 'native'
-                    }).then(picker => {
-                        divAdmin.appendChild(picker);
-                    });
+                    try {
+                        new EmojiMart.Picker({
+                            onEmojiSelect: (emoji) => {
+                                adminTextarea.value += emoji.native;
+                                adminTextarea.focus();
+                                adminTextarea.dispatchEvent(new Event('input'));
+                                emojiPickerOpenAdmin = false;
+                                emojiMartAdmin.innerHTML = '';
+                            },
+                            theme: 'light',
+                            set: 'native',
+                            previewPosition: 'none',
+                            perLine: 8
+                        }).then(picker => divAdmin.appendChild(picker)).catch(e => console.error('Emoji error:', e));
+                    } catch (error) {
+                        console.error('Emoji error:', error);
+                    }
                 } else {
                     emojiMartAdmin.innerHTML = '';
                 }
@@ -625,37 +641,25 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         }
 
         function sendTypingStatusAdmin(isTyping) {
-            if (!ticketIdAdmin) return;
-            
-            const ticketNumberEl = document.querySelector('.chat-header h3');
-            const ticketNumber = ticketNumberEl?.textContent.trim();
-            
-            if (!ticketNumber) return;
+            if (!ticketNumberAdmin) return;
             
             fetch('../../src/api/typing-status.php', {
                 method: 'POST',
                 body: JSON.stringify({
-                    ticket_number: ticketNumber,
+                    ticket_number: ticketNumberAdmin,
                     is_typing: isTyping,
                     sender_type: 'admin'
                 }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).catch(error => console.error('Error:', error));
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.error('Error:', e));
         }
 
-        function startTypingIndicator() {
-            if (!ticketIdAdmin) return;
-            
-            const ticketNumberEl = document.querySelector('.chat-header h3');
-            const ticketNumber = ticketNumberEl?.textContent.trim();
-            
-            if (!ticketNumber) return;
+        function startTypingIndicatorAdmin() {
+            if (!ticketNumberAdmin) return;
             
             setInterval(() => {
-                fetch(`../../src/api/typing-status.php?ticket_number=${ticketNumber}`)
-                .then(response => response.json())
+                fetch(`../../src/api/typing-status.php?ticket_number=${ticketNumberAdmin}`)
+                .then(r => r.json())
                 .then(data => {
                     const typingContainer = document.getElementById('typingIndicatorAdmin');
                     if (!typingContainer) return;
@@ -663,7 +667,6 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                     if (data.success && data.data && data.data.is_typing) {
                         const senderType = data.data.sender_type;
                         
-                        // Only show if CUSTOMER is typing (not admin)
                         if (senderType === 'customer') {
                             if (!typingContainer.innerHTML) {
                                 typingContainer.innerHTML = `
@@ -686,94 +689,59 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                         typingContainer.innerHTML = '';
                     }
                 })
-                .catch(error => console.error('Error checking typing:', error));
-            }, 2000); // Check every 2 seconds to reduce server load
+                .catch(e => console.error('Error:', e));
+            }, 2000);
         }
 
         function loadMessagesAdmin() {
-            if (!ticketIdAdmin) return;
+            if (!ticketNumberAdmin) return;
             
-            const ticketNumberEl = document.querySelector('.chat-header h3');
-            const ticketNumber = ticketNumberEl?.textContent.trim();
-            
-            if (!ticketNumber) return;
-            
-            // Fetch messages via API instead of reloading page
-            fetch(`../../src/api/get-messages.php?ticket_number=${ticketNumber}`)
-            .then(response => response.json())
+            fetch(`../../src/api/get-messages.php?ticket_number=${ticketNumberAdmin}`)
+            .then(r => r.json())
             .then(data => {
                 if (data.success && data.data) {
                     displayMessagesAdmin(data.data);
-                    // Mark messages as read untuk admin
-                    markMessagesAsReadAdmin();
                 }
             })
-            .catch(error => console.error('Error loading messages:', error));
-        }
-
-        function markMessagesAsReadAdmin() {
-            if (!ticketIdAdmin) return;
-            
-            const ticketNumberEl = document.querySelector('.chat-header h3');
-            const ticketNumber = ticketNumberEl?.textContent.trim();
-            
-            if (!ticketNumber) return;
-            
-            fetch('../../src/api/mark-read.php', {
-                method: 'POST',
-                body: JSON.stringify({
-                    ticket_number: ticketNumber,
-                    viewer_type: 'admin'
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).catch(error => console.error('Error:', error));
+            .catch(e => console.error('Error:', e));
         }
 
         function displayMessagesAdmin(ticketData) {
             const messages = ticketData.messages || [];
             const messagesArea = document.querySelector('.chat-messages');
             
-            // Clear existing messages but keep typing indicator
+            if (!messagesArea) return;
+            
             const typingIndicator = messagesArea.querySelector('#typingIndicatorAdmin');
+            const existingMessages = messagesArea.querySelectorAll('.chat-message');
+            
+            if (existingMessages.length === messages.length) {
+                return; // Tidak perlu re-render jika jumlah sama
+            }
+            
+            const typingContent = typingIndicator?.innerHTML;
             messagesArea.innerHTML = '';
             
             if (messages.length === 0) {
                 messagesArea.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Belum ada pesan</div>';
-                if (typingIndicator) messagesArea.appendChild(typingIndicator);
+                if (typingIndicator) {
+                    const div = document.createElement('div');
+                    div.id = 'typingIndicatorAdmin';
+                    div.innerHTML = typingContent;
+                    messagesArea.appendChild(div);
+                }
                 return;
             }
             
-            // Display messages dengan validasi sender_type dan status
             messages.forEach(msg => {
-                // Validate sender_type
-                if (!msg.sender_type) {
-                    console.error('Message missing sender_type:', msg);
-                    return;
-                }
-                
-                const senderType = String(msg.sender_type).toLowerCase().trim();
                 const messageEl = document.createElement('div');
-                messageEl.className = `chat-message ${senderType}`;
+                messageEl.className = `chat-message ${msg.sender_type}`;
                 
-                // Status untuk SEMUA pesan (customer dan admin)
                 let statusHtml = '';
-                
-                if (senderType === 'customer') {
-                    // Customer messages: tampilkan apakah sudah dibaca admin atau belum
-                    if (msg.is_read) {
-                        statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
-                    } else {
-                        statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
-                    }
-                } else if (senderType === 'admin') {
-                    // Admin messages: tampilkan apakah sudah dibaca customer atau belum
-                    if (msg.is_read) {
-                        statusHtml = '<span style="color: #28a745; font-size: 10px; margin-left: 6px;">✓✓ Dibaca Customer</span>';
-                    } else {
-                        statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim ke Customer</span>';
-                    }
+                if (msg.sender_type === 'customer' && msg.is_read) {
+                    statusHtml = '<span style="color: #4caf50; font-size: 10px; margin-left: 6px;">✓✓ Dibaca</span>';
+                } else if (msg.sender_type === 'customer') {
+                    statusHtml = '<span style="color: #999; font-size: 10px; margin-left: 6px;">✓ Terkirim</span>';
                 }
                 
                 let attachmentHtml = '';
@@ -797,12 +765,11 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 messagesArea.appendChild(messageEl);
             });
             
-            // Re-add typing indicator at the end
-            if (typingIndicator) {
-                messagesArea.appendChild(typingIndicator);
-            }
+            const newTypingDiv = document.createElement('div');
+            newTypingDiv.id = 'typingIndicatorAdmin';
+            newTypingDiv.innerHTML = typingContent || '';
+            messagesArea.appendChild(newTypingDiv);
             
-            // Scroll to bottom
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
 
@@ -811,28 +778,19 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             if (!file) return;
 
             if (!file.type.startsWith('image/')) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Tidak Valid',
-                    text: 'Hanya file gambar yang diizinkan (JPG, PNG, GIF, WebP)'
-                });
+                Swal.fire({ icon: 'error', title: 'File Tidak Valid', text: 'Hanya file gambar yang diizinkan' });
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Terlalu Besar',
-                    text: 'Ukuran file maksimal 5MB'
-                });
+                Swal.fire({ icon: 'error', title: 'File Terlalu Besar', text: 'Ukuran file maksimal 5MB' });
                 return;
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 selectedFileAdmin = file;
-                const preview = document.getElementById('previewImageAdmin');
-                preview.src = e.target.result;
+                document.getElementById('previewImageAdmin').src = e.target.result;
                 document.getElementById('previewAreaAdmin').classList.add('show');
             };
             reader.readAsDataURL(file);
@@ -847,133 +805,110 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
         function sendAdminMessage(event) {
             event.preventDefault();
             
-            const input = document.getElementById('adminMessageInput');
-            const message = input.value.trim();
-
+            const message = adminTextarea.value.trim();
             if (!message && !selectedFileAdmin) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pesan Kosong',
-                    text: 'Silakan ketik pesan atau pilih gambar'
-                });
+                Swal.fire({ icon: 'warning', title: 'Pesan Kosong', text: 'Silakan ketik pesan atau pilih gambar' });
                 return;
             }
 
             const btn = event.target;
             btn.disabled = true;
-            btn.textContent = '⏳ Mengirim...';
 
-            const ticketNumberEl = document.querySelector('.chat-header h3');
-            const ticketNumber = ticketNumberEl?.textContent.trim();
-
-            // Use FormData for file upload
             const formData = new FormData();
-            formData.append('ticket_number', ticketNumber);
+            formData.append('ticket_number', ticketNumberAdmin);
             formData.append('message', message);
             formData.append('sender_type', 'admin');
             
-            if (selectedFileAdmin) {
-                formData.append('attachment', selectedFileAdmin);
-            }
+            if (selectedFileAdmin) formData.append('attachment', selectedFileAdmin);
 
-            fetch('../../src/api/send-message.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
+            fetch('../../src/api/send-message.php', { method: 'POST', body: formData })
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    input.value = '';
-                    input.style.height = 'auto';
+                    adminTextarea.value = '';
                     removeFileAdmin();
-                    sendTypingStatusAdmin(false);
+                    btn.disabled = false;
+                    Swal.fire({ icon: 'success', title: 'Pesan Terkirim', text: 'Pesan Anda telah terkirim' });
                     
-                    // Reload page to show new message
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Pesan Terkirim!',
-                        text: 'Pesan Anda telah dikirim',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
+                    // Refresh messages
+                    loadMessagesAdmin();
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: data.message || 'Gagal mengirim pesan'
-                    });
+                    btn.disabled = false;
+                    Swal.fire({ icon: 'error', title: 'Gagal Mengirim Pesan', text: data.message });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan!',
-                    text: 'Terjadi kesalahan jaringan'
-                });
-            })
-            .finally(() => {
+            .catch(e => {
                 btn.disabled = false;
-                btn.textContent = '📤 Kirim';
+                console.error('Error:', e);
+                Swal.fire({ icon: 'error', title: 'Gagal Mengirim Pesan', text: 'Terjadi kesalahan pada server' });
             });
         }
 
         function updateTicketStatus(ticketId, status) {
-            fetch('../../src/api/update-ticket-status.php', {
-                method: 'POST',
-                body: JSON.stringify({
-                    ticket_id: ticketId,
-                    status: status
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Status Berhasil Diubah!',
-                        text: 'Status ticket telah diperbarui',
-                        timer: 1500,
-                        showConfirmButton: false
+            const statusLabel = {
+                open: 'Terbuka',
+                in_progress: 'Diproses',
+                resolved: 'Selesai',
+                closed: 'Ditutup'
+            }[status];
+            
+            if (!statusLabel) return;
+            
+            Swal.fire({
+                title: `Ubah Status Ticket`,
+                text: `Apakah Anda yakin ingin mengubah status ticket ini menjadi "${statusLabel}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Ubah',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    fetch('../../src/api/update-ticket-status.php', {
+                        method: 'POST',
+                        body: JSON.stringify({ ticket_id: ticketId, status: status }),
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({ icon: 'success', title: 'Status Diubah', text: `Status ticket telah diubah menjadi "${statusLabel}"` });
+                            
+                            // Update status button
+                            document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+                            document.querySelector(`.status-btn.active`).classList.remove('active');
+                            document.querySelector(`.status-btn[onclick*="${status}"]`).classList.add('active');
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Gagal Mengubah Status', text: data.message });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({ icon: 'error', title: 'Gagal Mengubah Status', text: 'Terjadi kesalahan pada server' });
                     });
-                    
-                    // Reload page to show updated status
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: data.message || 'Gagal mengubah status'
-                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan!',
-                    text: 'Terjadi kesalahan jaringan'
-                });
             });
         }
 
         function viewImage(url) {
-            Swal.fire({
-                imageUrl: url,
-                imageAlt: 'Lampiran',
-                confirmButtonText: 'Tutup',
-                showCloseButton: true
-            });
+            const img = new Image();
+            img.src = url;
+            const w = window.open("");
+            w.document.write(img.outerHTML);
         }
+
+        window.addEventListener('beforeunload', () => {
+            // Stop tracking LANGSUNG ketika meninggalkan page
+            if (ticketNumberAdmin) {
+                // Gunakan navigator.sendBeacon untuk ensure request terkirim meski page unload
+                navigator.sendBeacon('../../src/api/admin-viewing.php', JSON.stringify({
+                    ticket_number: ticketNumberAdmin,
+                    is_viewing: false
+                }));
+            }
+            
+            if (messageRefreshIntervalAdmin) clearInterval(messageRefreshIntervalAdmin);
+            sendTypingStatusAdmin(false);
+        });
     </script>
 </body>
 </html>
