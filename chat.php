@@ -926,56 +926,6 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             }
             sendTypingStatus(false);
         });
-
-        // SSE realtime
-let lastMessageId = 0;
-
-const evtSource = new EventSource(`src/api/live-messages.php?ticket=${TICKET_NUMBER}`);
-
-evtSource.addEventListener("message", (event) => {
-    const newMessages = JSON.parse(event.data);
-
-    if (newMessages.length > 0) {
-        appendNewMessages(newMessages);
-        lastMessageId = newMessages[newMessages.length - 1].id;
-        markMessagesAsRead();
-    }
-});
-
-// Optional: heartbeat
-evtSource.addEventListener("ping", (e) => {});
-function appendNewMessages(messages) {
-    const area = document.getElementById("messagesArea");
-
-    // Hapus "memuat..."
-    if (area.querySelector(".empty-state")) area.innerHTML = "";
-
-    messages.forEach(msg => {
-        const isCustomer = msg.sender_type === 'customer';
-
-        const wrapper = document.createElement("div");
-        wrapper.className = `message ${isCustomer ? 'customer' : 'admin'}`;
-
-        let bubble = `<div class="message-bubble">${escapeHtml(msg.message)}`;
-
-        if (msg.attachment_url) {
-            bubble += `<br><img src="${escapeHtml(msg.attachment_url)}" class="message-attachment">`;
-        }
-
-        bubble += `</div>`;
-
-        wrapper.innerHTML = `
-            <div>
-                ${bubble}
-                <div class="message-time">${formatTime(msg.created_at)}</div>
-            </div>
-        `;
-
-        area.appendChild(wrapper);
-    });
-
-    area.scrollTop = area.scrollHeight;
-}
     </script>
 </body>
 </html>
