@@ -544,6 +544,8 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             });
         }
 
+        let adminViewingIntervalAdmin; // Interval untuk keep-alive tracking
+
         document.addEventListener('DOMContentLoaded', () => {
             if (ticketIdAdmin) {
                 initEmojiPickerAdmin();
@@ -551,6 +553,11 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 
                 // Track viewing untuk ticket yang dipilih
                 trackAdminViewing(true);
+                
+                // Keep-alive: Update last_view setiap 10 detik agar tetap terdeteksi
+                adminViewingIntervalAdmin = setInterval(() => {
+                    trackAdminViewing(true);
+                }, 10000);
                 
                 loadMessagesAdmin();
                 
@@ -907,6 +914,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
             }
             
             if (messageRefreshIntervalAdmin) clearInterval(messageRefreshIntervalAdmin);
+            if (adminViewingIntervalAdmin) clearInterval(adminViewingIntervalAdmin);
             sendTypingStatusAdmin(false);
         });
     </script>
