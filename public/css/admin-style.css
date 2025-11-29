@@ -1,0 +1,1064 @@
+/* admin-style.css */
+
+:root {
+    /* Skema Warna Modern */
+    --primary-color: #1a73e8; /* Biru Google/Modern */
+    --primary-light: #4285f4;
+    --secondary-bg: #f9f9fb; /* Latar belakang panel daftar tiket */
+    --main-bg: #ffffff;
+    --text-color: #3c4043;
+    --border-color: #e0e0e0;
+    --success-color: #00b894;
+    --warning-color: #ffc107;
+    --danger-color: #d63031;
+}
+
+/* --- Layout Utama --- */
+body {
+    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+    color: var(--text-color);
+}
+
+.admin-app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 1. Sidebar Navigasi Utama */
+.main-sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+.sidebar-logo {
+    text-align: center;
+    padding: 10px 0 30px;
+    font-weight: 700;
+}
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+.sidebar-nav a i {
+    margin-right: 15px;
+    width: 20px;
+}
+.sidebar-nav a:hover:not(.active) {
+    background-color: var(--primary-light);
+    color: white;
+}
+.sidebar-nav .active {
+    background-color: var(--main-bg);
+    color: var(--primary-color);
+    border-left: 5px solid white;
+    font-weight: bold;
+}
+.sidebar-nav .logout {
+    position: absolute;
+    bottom: 0;
+    width: 250px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 2. Panel Daftar Tiket (Gaya Chat) */
+.ticket-list-panel {
+    width: 350px; /* Lebar panel daftar chat */
+    background-color: var(--secondary-bg);
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.panel-header {
+    padding: 20px;
+    background-color: var(--main-bg);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.ticket-filter {
+    padding: 10px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+.ticket-filter p {
+    font-size: 0.8em;
+    color: #777;
+    margin: 0;
+    width: 100%;
+}
+.filter-btn {
+    text-decoration: none;
+    font-size: 0.75em;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background-color: #eee;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+.filter-btn:hover { background-color: #ddd; }
+.filter-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Item Chat */
+.list-container {
+    padding-bottom: 20px;
+}
+.ticket-item {
+    display: flex;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-bottom: 1px solid #f0f0f0;
+}
+.ticket-item:hover {
+    background-color: #e9eef3;
+}
+.unread-indicator {
+    background-color: #fff9e6; /* Latar belakang untuk tiket baru/unread */
+    font-weight: bold;
+}
+.unread-indicator .message-count-badge {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.ticket-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+}
+.customer-name {
+    font-size: 0.95em;
+    font-weight: 600;
+}
+.ticket-date {
+    font-size: 0.7em;
+    color: #999;
+}
+.ticket-subject-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px;
+}
+.message-count-badge {
+    font-size: 0.7em;
+    background-color: #ccc;
+    color: var(--text-color);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 10px;
+    font-weight: normal;
+}
+.ticket-meta {
+    font-size: 0.7em;
+    color: #aaa;
+}
+
+/* 3. Area Konten Utama (Dashboard Summary) */
+.admin-content-area {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: var(--main-bg);
+    overflow-y: auto;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+.greeting-message {
+    color: #777;
+    margin-top: 5px;
+}
+.admin-user-info {
+    display: flex;
+    align-items: center;
+}
+.user-avatar-header {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: var(--primary-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    border: 2px solid var(--primary-color);
+}
+
+/* Statistik Cards */
+.dashboard-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    background-color: var(--main-bg);
+}
+.stat-icon {
+    font-size: 2.5em;
+    margin-right: 15px;
+}
+.stat-info {
+    line-height: 1.3;
+}
+.stat-label {
+    font-size: 0.9em;
+    color: #777;
+}
+.stat-value {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+/* Warna Khusus Card */
+.stat-total .stat-icon { color: var(--primary-color); }
+.stat-open .stat-icon { color: var(--danger-color); }
+.stat-progress .stat-icon { color: var(--warning-color); }
+.stat-resolved .stat-icon { color: var(--success-color); }
+
+/* Section Tambahan */
+.dashboard-section {
+    background-color: var(--secondary-bg);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+.chart-container, .link-grid {
+    padding: 15px;
+    background-color: var(--main-bg);
+    border-radius: 8px;
+    text-align: center;
+}
+.chart-note {
+    font-style: italic;
+    color: #999;
+}
+.link-grid {
+    display: flex;
+    gap: 15px;
+    justify-content: space-around;
+}
+.quick-link-item {
+    padding: 15px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    transition: transform 0.2s;
+    flex-grow: 1;
+    text-align: center;
+}
+.quick-link-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+.link-new { background-color: var(--danger-color); }
+.link-users { background-color: #6c757d; }
+.link-faq { background-color: #20c997; }
+.quick-link-item i {
+    display: block;
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+/* Badge Styling (Sesuai dengan fungsi getStatusBadge) */
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge.status-open { background-color: #ffe0e0; color: var(--danger-color); }
+.badge.status-in_progress { background-color: #fff4d9; color: var(--warning-color); }
+.badge.status-resolved, .badge.status-closed { background-color: #d4edda; color: var(--success-color); }
+
+
+/* --- Responsiveness (Mobile) --- */
+@media (max-width: 992px) {
+    .main-sidebar {
+        width: 80px; /* Perkecil sidebar */
+        padding: 20px 0;
+    }
+    .main-sidebar span {
+        display: none; /* Sembunyikan teks di sidebar */
+    }
+    .main-sidebar a {
+        justify-content: center;
+        padding: 15px 0;
+    }
+    .main-sidebar a i {
+        margin: 0;
+    }
+    .sidebar-logo h2 {
+        font-size: 1.2em;
+    }
+    .ticket-list-panel {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-app-layout {
+        flex-direction: column;
+    }
+    .main-sidebar {
+        width: 100%;
+        height: auto;
+        display: none; /* Sembunyikan sidebar utama di HP, fokus pada daftar tiket */
+    }
+    .ticket-list-panel {
+        width: 100%;
+        border-right: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .admin-content-area {
+        padding: 20px;
+        /* Di Dashboard, area konten utama (ringkasan) tetap ditampilkan di bawah daftar tiket */
+    }
+    .dashboard-stats-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* --- Tambahan untuk faqs.php (Dual Panel Layout) --- */
+
+.admin-content-area.dual-panel-layout {
+    display: flex;
+    flex-direction: column;
+}
+.dual-panel-container {
+    display: flex;
+    gap: 30px;
+    flex-grow: 1;
+}
+
+.panel-left {
+    flex: 3; /* Daftar FAQ mengambil 60% */
+    min-width: 400px;
+}
+.panel-right {
+    flex: 2; /* Form mengambil 40% */
+    min-width: 300px;
+    position: sticky; /* Agar form tetap terlihat saat scrolling daftar FAQ */
+    top: 100px; 
+    align-self: flex-start; /* Untuk Sticky positioning */
+}
+
+/* --- Form Styling Modern --- */
+.faq-form-panel {
+    background-color: var(--secondary-bg);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #555;
+}
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    outline: none;
+}
+.form-hint {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Button Styling */
+.btn-submit {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+    width: 100%;
+}
+.btn-submit:hover {
+    background-color: var(--primary-light);
+}
+.btn-small {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    text-decoration: none;
+    margin-left: 10px;
+}
+.btn-edit {
+    background-color: #ffc107;
+    color: #333;
+}
+.btn-delete {
+    background-color: var(--danger-color);
+    color: white;
+}
+.btn-cancel {
+    background-color: #ccc;
+    color: #333;
+    display: inline-block;
+    margin-top: 10px;
+}
+.btn-cancel:hover {
+    background-color: #aaa;
+}
+
+
+/* --- Accordion FAQ Styling --- */
+.faq-accordion-container {
+    margin-top: 20px;
+}
+.accordion-item {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    background-color: var(--main-bg);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    background-color: #f7f7f7;
+    transition: background-color 0.2s;
+}
+.accordion-item.active .accordion-header {
+    background-color: #ededed;
+}
+
+.faq-question-text {
+    font-size: 1.1em;
+    font-weight: 500;
+    color: var(--text-color);
+}
+.faq-category-tag {
+    font-size: 0.75em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: normal;
+    margin-right: 10px;
+}
+
+.toggle-icon {
+    color: var(--primary-color);
+    transition: transform 0.3s;
+}
+.accordion-item.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 0 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+.accordion-content p {
+    margin-top: 10px;
+}
+.faq-answer-text {
+    line-height: 1.6;
+    color: #444;
+    padding-bottom: 15px;
+}
+.faq-item-actions {
+    padding: 10px 0 15px;
+    border-top: 1px dashed #eee;
+    margin-top: 10px;
+    text-align: right;
+}
+
+/* Responsiveness */
+@media (max-width: 992px) {
+    .dual-panel-container {
+        flex-direction: column;
+    }
+    .panel-left, .panel-right {
+        min-width: 100%;
+        flex: 1;
+        position: static; /* Nonaktifkan sticky di mobile */
+    }
+}
+@media (max-width: 768px) {
+    .faq-form-panel {
+        padding: 20px;
+    }
+    .accordion-header {
+        padding: 12px 15px;
+    }
+    .faq-question-text {
+        font-size: 1em;
+    }
+    .btn-submit {
+        width: 100%;
+    }
+}
+/* --- TICKET CHAT LAYOUT --- */
+
+.ticket-chat-layout {
+    display: flex;
+    flex-direction: column;
+    /* Hilangkan padding default agar container tiket mengambil lebar penuh */
+    padding: 0; 
+}
+
+.admin-header {
+    /* Pastikan header tetap terlihat di atas layout chat */
+    padding: 20px 30px; 
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ticket-chat-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* Penting untuk mengelola scroll area */
+    height: calc(100vh - 80px); /* Sesuaikan tinggi agar mengambil sisa viewport */
+}
+
+/* --- KIRI: Daftar Tiket --- */
+.tickets-list {
+    flex: 0 0 350px; /* Lebar tetap 350px */
+    border-right: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.search-filter-area {
+    padding: 15px;
+    background-color: #f0f0f0;
+}
+#ticketSearch {
+    width: 100%;
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+.ticket-list-content {
+    overflow-y: auto;
+    padding: 0 10px;
+}
+
+.ticket-item {
+    display: flex;
+    padding: 15px 10px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s;
+    border: 1px solid transparent;
+}
+.ticket-item:hover {
+    background-color: #e8e8e8;
+}
+.ticket-item.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.ticket-item.active .ticket-item-subject, 
+.ticket-item.active .ticket-item-last-message,
+.ticket-item.active .ticket-item-number {
+    color: rgba(255, 255, 255, 0.9);
+}
+.ticket-item.active .status-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.ticket-info {
+    flex-grow: 1;
+}
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.ticket-item-number {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: var(--primary-color);
+}
+.ticket-item.active .ticket-item-number {
+    color: white;
+}
+
+.ticket-item-customer {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.ticket-item-subject {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 3px;
+}
+.ticket-item-last-message {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ticket-item.active .ticket-item-subject, 
+.ticket-item.active .ticket-item-last-message {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+
+/* --- KANAN: Chat Panel --- */
+.chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--main-bg);
+}
+
+.no-ticket-selected {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    color: #ccc;
+}
+.no-ticket-selected i {
+    color: #e0e0e0;
+    margin-bottom: 20px;
+}
+.no-ticket-selected h2 {
+    color: #999;
+}
+
+.chat-header {
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+.ticket-subject-title {
+    font-size: 1.2em;
+    margin-bottom: 5px;
+    color: #333;
+}
+.customer-info {
+    font-size: 0.9em;
+    color: #666;
+}
+.status-buttons {
+    display: flex;
+    gap: 10px;
+}
+.status-btn {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+.status-btn i {
+    margin-right: 5px;
+}
+/* Status Styling */
+.btn-status-open.active { background-color: var(--info-color); color: white; border-color: var(--info-color); }
+.btn-status-in-progress.active { background-color: var(--warning-color); color: white; border-color: var(--warning-color); }
+.btn-status-resolved.active { background-color: var(--success-color); color: white; border-color: var(--success-color); }
+.btn-status-closed.active { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 30px;
+    background-color: #f7f9fc; /* Warna background chat */
+}
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.chat-message {
+    display: flex;
+    margin-bottom: 15px;
+    max-width: 80%;
+}
+.chat-message.admin {
+    justify-content: flex-end;
+    margin-left: auto;
+}
+.chat-message.customer {
+    justify-content: flex-start;
+    margin-right: auto;
+}
+
+.chat-bubble {
+    padding: 12px;
+    border-radius: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.chat-message.admin .chat-bubble {
+    background-color: var(--primary-color);
+    color: white;
+    border-bottom-right-radius: 3px;
+}
+
+.chat-message.customer .chat-bubble {
+    background-color: white;
+    color: #333;
+    border: 1px solid #eee;
+    border-bottom-left-radius: 3px;
+}
+
+.chat-message-sender {
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-bottom: 5px;
+    opacity: 0.8;
+}
+.chat-message.admin .chat-message-sender {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-message-content {
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.chat-message-time-status {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+
+.chat-message-time {
+    margin-right: 5px;
+}
+
+.read-status {
+    font-size: 0.8em;
+    margin-left: 3px;
+}
+.read-status .read {
+    color: #4caf50;
+}
+
+
+/* Typing Indicator Styling */
+.chat-message.typing .chat-bubble {
+    padding: 8px 15px;
+    background-color: #ddd;
+    box-shadow: none;
+}
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #666;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+
+/* --- Chat Input Area --- */
+.chat-input {
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color);
+    background-color: #fff;
+}
+.chat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+.textarea-wrapper {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding-right: 5px;
+}
+#adminMessageInput {
+    flex-grow: 1;
+    border: none;
+    padding: 10px 15px;
+    resize: none;
+    min-height: 40px;
+    max-height: 100px;
+    font-size: 1em;
+    outline: none;
+    box-shadow: none;
+}
+.icon-group {
+    display: flex;
+    padding: 5px 0;
+    gap: 5px;
+}
+.icon-btn-admin {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+.icon-btn-admin:hover {
+    color: var(--primary-color);
+}
+.file-input-label-admin {
+    display: flex;
+    align-items: center;
+}
+.file-input-label-admin input {
+    display: none;
+}
+.btn-send {
+    padding: 10px 20px;
+    white-space: nowrap;
+}
+
+/* Preview Area */
+.preview-area-admin {
+    display: none;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    position: relative;
+}
+.preview-area-admin.show {
+    display: flex;
+}
+.preview-image-admin {
+    max-width: 50px;
+    max-height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+    margin-right: 10px;
+}
+.file-name-preview {
+    font-size: 0.9em;
+    color: #666;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.remove-file-admin {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: auto;
+    font-size: 1.2em;
+    padding: 0 5px;
+}
+
+
+/* Attachment Message Style */
+.attachment-preview {
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+.chat-message-attachment {
+    max-width: 100%;
+    max-height: 250px;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    display: block;
+    transition: transform 0.2s;
+}
+.chat-message-attachment:hover {
+    filter: brightness(0.9);
+}
+.attachment-link {
+    display: block;
+    text-align: right;
+    font-size: 0.75em;
+    margin-top: 5px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.chat-message.admin .attachment-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+.chat-message.customer .attachment-link {
+    color: #333;
+}
+
+
+/* Emoji Mart */
+.emoji-mart-container {
+    position: absolute;
+    bottom: 50px; /* Di atas input */
+    right: 0;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.emoji-picker-wrapper-admin {
+    position: relative;
+}
+.emoji-mart-container.show {
+    display: block;
+}
+
+
+/* Responsive Design for smaller screens */
+@media (max-width: 992px) {
+    .ticket-chat-container {
+        flex-direction: column;
+        height: auto;
+    }
+    .tickets-list {
+        flex: none;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 300px; /* Batasi tinggi daftar tiket */
+    }
+    .chat-panel {
+        flex: 1;
+    }
+    .chat-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .status-buttons {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .status-btn {
+        padding: 5px 10px;
+        font-size: 0.85em;
+    }
+    .chat-input {
+        padding: 15px;
+    }
+}
+}
