@@ -198,7 +198,7 @@ if (isset($_GET['delete'])) {
                 <a href="faqs.php" class="nav-item active">
                     <span>❓ FAQ</span>
                 </a>
-                <a href="../../login.php" class="nav-item logout">
+                <a href="../../logout.php" class="nav-item logout">
                     <span>🚪 Logout</span>
                 </a>
             </nav>

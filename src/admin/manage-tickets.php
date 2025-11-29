@@ -272,7 +272,7 @@ $allTickets = $conn->query($allTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 <a href="faqs.php" class="nav-item">
                     <span>❓ FAQ</span>
                 </a>
-                <a href="../../login.php" class="nav-item logout">
+                <a href="../../logout.php" class="nav-item logout">
                     <span>🚪 Logout</span>
                 </a>
             </nav>
