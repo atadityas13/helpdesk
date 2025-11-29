@@ -5,6 +5,7 @@
  */
 
 require_once 'src/config/database.php';
+require_once 'src/helpers/functions.php';
 require_once 'src/middleware/auth.php';
 
 // If already logged in, redirect to dashboard
