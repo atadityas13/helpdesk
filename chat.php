@@ -638,7 +638,8 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 }
 
                 // Display messages
-                messages.forEach(msg => {
+                messages.forEach((msg, idx) => {
+                    // Determine if this is a customer message (sender_type should be 'customer')
                     const isCustomer = msg.sender_type === 'customer';
                     const messageEl = document.createElement('div');
                     messageEl.className = `message ${isCustomer ? 'customer' : 'admin'}`;
@@ -646,7 +647,7 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                     const time = formatTime(msg.created_at);
                     let statusIcon = '';
                     
-                    // Tambah status icon untuk customer messages
+                    // Tambah status icon untuk customer messages SAJA
                     if (isCustomer) {
                         if (msg.is_read) {
                             statusIcon = '<span class="message-status status-read">✓✓</span>';
@@ -686,10 +687,17 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                 messageElements.forEach((el, idx) => {
                     if (messages[idx]) {
                         const msg = messages[idx];
-                        const statusEl = el.querySelector('.message-status');
+                        const isCustomer = msg.sender_type === 'customer';
                         
-                        // Update read status if this is a customer message
-                        if (msg.sender_type === 'customer') {
+                        // Update class name jika berubah
+                        const expectedClass = isCustomer ? 'customer' : 'admin';
+                        if (!el.classList.contains(expectedClass)) {
+                            el.className = `message ${expectedClass}`;
+                        }
+                        
+                        // Update read status jika ini customer message
+                        if (isCustomer) {
+                            const statusEl = el.querySelector('.message-status');
                             if (statusEl) {
                                 if (msg.is_read) {
                                     statusEl.className = 'message-status status-read';
@@ -745,16 +753,26 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
             .then(response => response.json())
             .then(data => {
                 const messagesArea = document.getElementById('messagesArea');
-                const existingTyping = messagesArea.querySelector('.typing-indicator');
                 
-                if (data.success && data.data && data.data.is_typing) {
-                    const senderType = data.data.sender_type;
-                    const senderName = senderType === 'admin' ? 'Admin Support' : 'Anda';
-                    
-                    // Only show typing indicator if it's from the OTHER person
-                    // For user (customer): only show if ADMIN is typing
-                    // For admin: only show if CUSTOMER is typing
-                    if (senderType === 'admin' && !existingTyping) {
+                // Jangan lakukan apapun jika tidak ada data atau empty state ditampilkan
+                if (!data.success || !data.data) {
+                    // Remove typing indicator jika ada
+                    const existingTyping = messagesArea.querySelector('.typing-indicator');
+                    if (existingTyping) {
+                        existingTyping.parentElement.remove();
+                    }
+                    return;
+                }
+                
+                const senderType = data.data.sender_type;
+                const isTyping = data.data.is_typing;
+                
+                // Cari container typing indicator (parent dari typing-indicator div)
+                const typingContainer = messagesArea.querySelector('.typing-indicator')?.parentElement;
+                
+                if (isTyping && senderType === 'admin') {
+                    // Hanya tampilkan jika admin yang mengetik
+                    if (!typingContainer) {
                         const typingEl = document.createElement('div');
                         typingEl.className = 'message admin';
                         typingEl.innerHTML = `
@@ -764,16 +782,16 @@ if (!$ticketNumber || !preg_match('/^TK-\d{8}-\d{5}$/', $ticketNumber)) {
                                     <div class="typing-dot"></div>
                                     <div class="typing-dot"></div>
                                 </div>
-                                <div class="message-time">${senderName} sedang mengetik...</div>
+                                <div class="message-time">Admin Support sedang mengetik...</div>
                             </div>
                         `;
                         messagesArea.appendChild(typingEl);
                         messagesArea.scrollTop = messagesArea.scrollHeight;
                     }
                 } else {
-                    // Remove typing indicator if no one is typing
-                    if (existingTyping) {
-                        existingTyping.remove();
+                    // Remove typing indicator jika admin tidak mengetik
+                    if (typingContainer) {
+                        typingContainer.remove();
                     }
                 }
             })
