@@ -77,18 +77,17 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 
         <!-- Main Content -->
         <main class="admin-content">
-            <!-- Header -->
-            <header class="admin-header">
-                <h1>Dashboard</h1>
-                <div class="admin-user">
-                    <span><?php echo $_SESSION['admin_username']; ?></span>
-                </div>
-            </header>
+            <!-- New Page Header -->
+            <div class="page-header">
+                <h1>Dashboard <span class="admin-label"><?php echo $_SESSION['admin_username']; ?></span></h1>
+            </div>
 
             <!-- Statistics -->
             <section class="dashboard-stats">
                 <div class="stat-card">
-                    <div class="stat-icon total">📊</div>
+                    <div class="stat-icon-wrapper total">
+                        <span class="stat-icon">📊</span>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Total Tickets</div>
                         <div class="stat-value"><?php echo $stats['total']; ?></div>
@@ -96,7 +95,9 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon open">🔴</div>
+                    <div class="stat-icon-wrapper open">
+                        <span class="stat-icon">🔴</span>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Open</div>
                         <div class="stat-value"><?php echo $stats['open']; ?></div>
@@ -104,7 +105,9 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon progress">🟡</div>
+                    <div class="stat-icon-wrapper progress">
+                        <span class="stat-icon">🟡</span>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">In Progress</div>
                         <div class="stat-value"><?php echo $stats['in_progress']; ?></div>
@@ -112,7 +115,9 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon resolved">🟢</div>
+                    <div class="stat-icon-wrapper resolved">
+                        <span class="stat-icon">🟢</span>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Resolved</div>
                         <div class="stat-value"><?php echo $stats['resolved']; ?></div>
@@ -122,45 +127,43 @@ $recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
 
             <!-- Recent Tickets -->
             <section class="dashboard-section">
-                <h2>Tickets Terbaru</h2>
-                <div class="tickets-table-container">
-                    <table class="tickets-table">
-                        <thead>
-                            <tr>
-                                <th>Nomor Ticket</th>
-                                <th>Pengguna</th>
-                                <th>Subjek</th>
-                                <th>Status</th>
-                                <th>Pesan</th>
-                                <th>Dibuat</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recentTickets as $ticket): ?>
-                                <tr>
-                                    <td><strong><?php echo $ticket['ticket_number']; ?></strong></td>
-                                    <td>
-                                        <div><?php echo $ticket['name']; ?></div>
-                                        <small><?php echo $ticket['email']; ?></small>
-                                    </td>
-                                    <td><?php echo $ticket['subject']; ?></td>
-                                    <td>
-                                        <span class="badge <?php echo getStatusBadge($ticket['status']); ?>">
-                                            <?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?>
-                                        </span>
-                                    </td>
-                                    <td><small><?php echo $ticket['message_count']; ?></small></td>
-                                    <td><?php echo formatDateTime($ticket['created_at']); ?></td>
-                                    <td>
-                                        <a href="manage-tickets.php?ticket=<?php echo $ticket['id']; ?>" class="btn-small">
-                                            Buka
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="section-header">
+                    <h2>Tickets Terbaru</h2>
+                    <div class="ticket-filters">
+                        <a href="?status=all" class="<?php echo $statusFilter === 'all' ? 'active' : ''; ?>">All</a>
+                        <a href="?status=open" class="<?php echo $statusFilter === 'open' ? 'active' : ''; ?>">Open</a>
+                        <a href="?status=in_progress" class="<?php echo $statusFilter === 'in_progress' ? 'active' : ''; ?>">In Progress</a>
+                        <a href="?status=resolved" class="<?php echo $statusFilter === 'resolved' ? 'active' : ''; ?>">Resolved</a>
+                        <a href="?status=closed" class="<?php echo $statusFilter === 'closed' ? 'active' : ''; ?>">Closed</a>
+                    </div>
+                </div>
+                
+                <div class="ticket-list-modern">
+                    <?php if (count($recentTickets) > 0): ?>
+                        <?php foreach ($recentTickets as $ticket): ?>
+                            <a href="manage-tickets.php?ticket=<?php echo $ticket['id']; ?>" class="ticket-card">
+                                <div class="ticket-card-left">
+                                    <div class="ticket-customer-avatar">
+                                        <?php echo strtoupper(substr($ticket['name'], 0, 1)); ?>
+                                    </div>
+                                    <div class="ticket-details">
+                                        <div class="ticket-subject"><?php echo htmlspecialchars($ticket['subject']); ?></div>
+                                        <div class="ticket-customer-name"><?php echo htmlspecialchars($ticket['name']); ?> • <?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
+                                    </div>
+                                </div>
+                                <div class="ticket-card-right">
+                                    <span class="badge <?php echo getStatusBadge($ticket['status']); ?>">
+                                        <?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?>
+                                    </span>
+                                    <div class="ticket-time"><?php echo formatDateTime($ticket['updated_at']); ?></div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="no-tickets-found">
+                            <p>Tidak ada tiket dengan status "<?php echo htmlspecialchars($statusFilter); ?>"</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </section>
         </main>
