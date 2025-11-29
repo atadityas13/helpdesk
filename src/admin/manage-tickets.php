@@ -4,10 +4,10 @@
  * Helpdesk MTsN 11 Majalengka
  */
 
-require_once '../../src/config/database.php';
-require_once '../../src/middleware/auth.php';
-require_once '../../src/helpers/functions.php';
-require_once '../../src/helpers/ticket.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/../helpers/functions.php';
+require_once __DIR__ . '/../helpers/ticket.php';
 
 requireAdminLogin();
 
