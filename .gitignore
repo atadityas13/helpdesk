@@ -1,0 +1,14 @@
+node_modules/
+vendor/
+.DS_Store
+*.log
+.env
+config/local.php
+public/uploads/*
+!public/uploads/.gitkeep
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.composer
