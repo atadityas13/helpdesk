@@ -880,7 +880,6 @@ if ($ticket) {
                             <p>Belum ada pesan. Silakan mulai percakapan.</p>
                         </div>
                     `;
-                    markMessagesAsRead();
                     return;
                 }
 
@@ -917,7 +916,10 @@ if ($ticket) {
                 });
 
                 messagesArea.scrollTop = messagesArea.scrollHeight;
-                markMessagesAsRead();
+                // Hanya tandai sebagai terbaca jika ada admin yang sedang viewing
+                if (currentAdminName) {
+                    markMessagesAsRead();
+                }
             } else {
                 messagesArea.querySelectorAll('.message-group').forEach((el, idx) => {
                     if (messages[idx]) {

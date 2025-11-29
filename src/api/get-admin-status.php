@@ -23,15 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         jsonResponse(false, 'Ticket not found');
     }
     
-    // Check admin_viewing dengan kondisi KETAT:
-    // 1. last_view dalam 25 detik terakhir (lebih ketat dari 30 detik)
-    // 2. Double check dengan timestamp comparison
+    // Check admin_viewing dengan kondisi yang lebih fleksibel:
+    // 1. last_view dalam 30 detik terakhir
+    // 2. Hanya satu kondisi untuk menghindari timezone issues
     $viewingQuery = "SELECT a.id, a.username, a.name, av.last_view
                      FROM admin_viewing av
                      JOIN admins a ON av.admin_id = a.id
                      WHERE av.ticket_number = ? 
-                     AND av.last_view > DATE_SUB(NOW(), INTERVAL 25 SECOND)
-                     AND UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(av.last_view) <= 25
+                     AND av.last_view > DATE_SUB(NOW(), INTERVAL 30 SECOND)
                      ORDER BY av.last_view DESC
                      LIMIT 1";
     
