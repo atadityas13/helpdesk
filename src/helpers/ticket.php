@@ -57,7 +57,7 @@ function createTicket($data) {
             INSERT INTO tickets (ticket_number, customer_id, subject, status, priority)
             VALUES (?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param('siss', $ticketNumber, $customerId, $data['subject'], $status, $priority);
+        $stmt->bind_param('sisss', $ticketNumber, $customerId, $data['subject'], $status, $priority);
         
         if (!$stmt->execute()) {
             throw new Exception('Gagal membuat ticket');
@@ -71,7 +71,7 @@ function createTicket($data) {
             INSERT INTO messages (ticket_id, sender_type, sender_id, message)
             VALUES (?, ?, ?, ?)
         ");
-        $stmt->bind_param('isis', $ticketId, $senderType, $customerId, $data['message']);
+        $stmt->bind_param('isss', $ticketId, $senderType, $customerId, $data['message']);
         
         if (!$stmt->execute()) {
             throw new Exception('Gagal membuat message');
