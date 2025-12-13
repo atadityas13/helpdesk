@@ -49,10 +49,16 @@ if (!defined('ENABLE_CSRF')) define('ENABLE_CSRF', true);
 if (!defined('ENABLE_RATE_LIMIT')) define('ENABLE_RATE_LIMIT', true);
 if (!defined('UPLOAD_PATH')) define('UPLOAD_PATH', 'public/uploads');
 
-// Security settings
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: SAMEORIGIN');
-header('X-XSS-Protection: 1; mode=block');
+// Security settings - MUST be before any output
+if (PHP_SAPI !== 'cli') {
+    // Only set headers if not in CLI mode
+    if (!headers_sent()) {
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Content-Type: text/html; charset=utf-8');
+    }
+}
 
 // Error handling based on APP_DEBUG
 if (APP_DEBUG) {

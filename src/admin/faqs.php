@@ -1,3 +1,24 @@
+<?php
+/**
+ * Admin FAQ Management
+ * Handle FAQ CRUD operations
+ */
+
+// Load configuration FIRST (before any output)
+require_once dirname(__DIR__) . '/config/.env.php';
+require_once dirname(__DIR__) . '/config/database.php';
+require_once dirname(__DIR__) . '/middleware/session.php';
+require_once dirname(__DIR__) . '/middleware/auth.php';
+require_once dirname(__DIR__) . '/helpers/api-response.php';
+require_once dirname(__DIR__) . '/helpers/functions.php';
+
+// Initialize session and check authentication
+initSession();
+requireAdminLogin();
+
+// Get database connection
+$db = Database::getInstance();
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>

@@ -23,9 +23,31 @@ CREATE TABLE IF NOT EXISTS customers (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
+-- TABLE: admins
+-- Menyimpan akun admin/staff support
+-- HARUS dibuat SEBELUM tickets karena tickets mereferensikan admins
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS admins (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL COMMENT 'bcrypt hash',
+    email VARCHAR(255),
+    role ENUM('admin', 'agent') DEFAULT 'agent',
+    is_active BOOLEAN DEFAULT TRUE,
+    last_activity TIMESTAMP,
+    is_online BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_username (username),
+    INDEX idx_is_active (is_active),
+    INDEX idx_is_online (is_online)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
 -- TABLE: tickets
 -- Menyimpan data ticket support
 -- Status: open → in_progress → resolved → closed
+-- Dependensi: customers dan admins harus ada terlebih dahulu
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS tickets (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -49,6 +71,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 -- ============================================================================
 -- TABLE: messages
 -- Menyimpan riwayat chat antara customer dan admin
+-- Dependensi: tickets harus ada terlebih dahulu
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS messages (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -66,28 +89,9 @@ CREATE TABLE IF NOT EXISTS messages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- TABLE: admins
--- Menyimpan akun admin/staff support
--- ============================================================================
-CREATE TABLE IF NOT EXISTS admins (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL COMMENT 'bcrypt hash',
-    email VARCHAR(255),
-    role ENUM('admin', 'agent') DEFAULT 'agent',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_activity TIMESTAMP,
-    is_online BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_username (username),
-    INDEX idx_is_active (is_active),
-    INDEX idx_is_online (is_online)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================================
 -- TABLE: faqs
 -- Knowledge base untuk reduce support tickets
+-- Tidak memiliki dependensi, bisa dibuat kapan saja
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS faqs (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -105,6 +109,7 @@ CREATE TABLE IF NOT EXISTS faqs (
 -- ============================================================================
 -- TABLE: rate_limits
 -- Menyimpan rate limit untuk login, ticket creation, dan messaging
+-- Tidak memiliki dependensi, bisa dibuat kapan saja
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS rate_limits (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -119,6 +124,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 -- ============================================================================
 -- TABLE: admin_viewing
 -- Menyimpan status admin yang sedang melihat ticket
+-- Dependensi: tickets dan admins harus ada terlebih dahulu
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS admin_viewing (
     id INT PRIMARY KEY AUTO_INCREMENT,

@@ -1,3 +1,39 @@
+<?php
+/**
+ * Admin Dashboard
+ * Display admin statistics and recent tickets
+ */
+
+// Load configuration FIRST (before any output)
+require_once dirname(__DIR__) . '/config/.env.php';
+require_once dirname(__DIR__) . '/config/database.php';
+require_once dirname(__DIR__) . '/middleware/session.php';
+require_once dirname(__DIR__) . '/middleware/auth.php';
+require_once dirname(__DIR__) . '/helpers/api-response.php';
+require_once dirname(__DIR__) . '/helpers/functions.php';
+
+// Initialize session and check authentication
+initSession();
+requireAdminLogin();
+
+// Get database connection
+$db = Database::getInstance();
+
+// Get statistics
+$stats = $db->query("SELECT 
+    COUNT(CASE WHEN status = 'open' THEN 1 END) as open_tickets,
+    COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_tickets,
+    COUNT(CASE WHEN status = 'resolved' THEN 1 END) as resolved_tickets,
+    COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_tickets,
+    COUNT(DISTINCT customer_id) as total_customers
+FROM tickets");
+$statsData = $stats ? mysqli_fetch_assoc($stats) : [];
+
+// Get recent tickets
+$recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t 
+    LEFT JOIN customers c ON t.customer_id = c.id 
+    ORDER BY t.created_at DESC LIMIT 10");
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
