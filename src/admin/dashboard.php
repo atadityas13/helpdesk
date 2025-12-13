@@ -233,21 +233,25 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
         /* Statistics Grid */
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
             margin-bottom: 32px;
         }
 
         .stat-card {
             background: white;
-            padding: 20px 16px;
+            padding: 28px 24px;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             text-align: center;
             transition: all 0.3s ease;
-            border-top: 4px solid var(--primary);
+            border-top: 5px solid var(--primary);
             position: relative;
             overflow: hidden;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         }
 
@@ -285,16 +289,16 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
 
         .stat-card h3 {
             color: var(--text-light);
-            font-size: 0.85em;
-            margin-bottom: 12px;
+            font-size: 0.9em;
+            margin-bottom: 16px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            letter-spacing: 1px;
+            font-weight: 700;
         }
 
         .stat-number {
-            font-size: 2.4em;
-            font-weight: 700;
+            font-size: 3em;
+            font-weight: 800;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -464,16 +468,22 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
 
             .stats {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 14px;
+                gap: 16px;
                 margin-bottom: 24px;
             }
 
             .stat-card {
-                padding: 16px 12px;
+                padding: 20px 16px;
+                min-height: 120px;
+            }
+
+            .stat-card h3 {
+                font-size: 0.85em;
+                margin-bottom: 12px;
             }
 
             .stat-number {
-                font-size: 2em;
+                font-size: 2.2em;
             }
         }
 
@@ -551,18 +561,22 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             .stats {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
+                margin-bottom: 20px;
             }
 
             .stat-card {
-                padding: 16px;
+                padding: 16px 12px;
+                min-height: 110px;
+            }
+
+            .stat-card h3 {
+                font-size: 0.75em;
+                margin-bottom: 10px;
+                letter-spacing: 0.5px;
             }
 
             .stat-number {
-                font-size: 2em;
-            }
-
-            .content-box {
-                padding: 16px;
+                font-size: 1.8em;
             }
 
             .table-responsive {
@@ -627,18 +641,21 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             .stats {
                 grid-template-columns: 1fr;
                 gap: 12px;
+                margin-bottom: 16px;
             }
 
             .stat-card {
-                padding: 14px;
+                padding: 16px 12px;
+                min-height: 100px;
+            }
+
+            .stat-card h3 {
+                font-size: 0.75em;
+                margin-bottom: 10px;
             }
 
             .stat-number {
                 font-size: 1.8em;
-            }
-
-            .stat-card h3 {
-                font-size: 0.8em;
             }
 
             .content-box {
