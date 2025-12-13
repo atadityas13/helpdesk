@@ -96,10 +96,10 @@ class RateLimiter {
  * Check rate limit dan return JSON error jika exceeded
  */
 function checkRateLimit($action, $identifier = null, $conn = null) {
-    global $conn as $globalConn;
+    global $conn;
     
     if (!$conn) {
-        $conn = $globalConn ?? null;
+        $conn = $conn ?? null;
     }
     
     if (!$conn) {
