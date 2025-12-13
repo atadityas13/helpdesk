@@ -41,11 +41,9 @@ $unreadResult = $conn->query($unreadQuery);
 $unreadCount = $unreadResult ? $unreadResult->fetch_assoc()['unread'] : 0;
 
 // Get all tickets with error handling
-$allTicketsQuery = "SELECT t.id, t.ticket_number, t.subject, t.status, t.customer_id, t.created_at, t.updated_at, c.name, COUNT(m.id) as message_count
+$allTicketsQuery = "SELECT DISTINCT t.id, t.ticket_number, t.subject, t.status, t.customer_id, t.created_at, t.updated_at, c.name
                     FROM tickets t
                     JOIN customers c ON t.customer_id = c.id
-                    LEFT JOIN messages m ON t.id = m.ticket_id
-                    GROUP BY t.id, t.ticket_number, t.subject, t.status, t.customer_id, t.created_at, t.updated_at, c.name
                     ORDER BY t.updated_at DESC";
 
 $ticketsResult = $conn->query($allTicketsQuery);
@@ -539,14 +537,15 @@ if (!$ticketsResult) {
                         <?php foreach ($allTickets as $ticket): ?>
                             <a href="?ticket=<?php echo $ticket['id']; ?>" 
                                class="ticket-item <?php echo ($ticketId == $ticket['id']) ? 'active' : ''; ?>">
-                                <div class="ticket-item-number"><?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
-                                <div class="ticket-item-customer"><?php echo htmlspecialchars($ticket['name']); ?></div>
-                                <div class="ticket-item-subject"><?php echo htmlspecialchars(substr($ticket['subject'], 0, 40)); ?></div>
+                                <div class="ticket-item-number"><?php echo htmlspecialchars($ticket['ticket_number'] ?? 'N/A'); ?></div>
+                                <div class="ticket-item-customer"><?php echo htmlspecialchars($ticket['name'] ?? 'Unknown'); ?></div>
+                                <div class="ticket-item-subject"><?php echo htmlspecialchars(substr($ticket['subject'] ?? '', 0, 40)); ?></div>
                             </a>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding: 20px; text-align: center; color: #999;">
-                            Tidak ada ticket
+                        <div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">
+                            <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            Tidak ada tiket
                         </div>
                     <?php endif; ?>
                 </div>
