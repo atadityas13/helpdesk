@@ -6,6 +6,7 @@
     <title>Helpdesk MTsN 11 Majalengka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #667eea;
@@ -576,6 +577,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
         function toggleFaq(header) {
             const item = header.parentElement;
@@ -602,16 +604,50 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Ticket berhasil dibuat!\nNomor Ticket: ' + data.ticket_number + '\n\nSimpan nomor ini untuk melacak ticket Anda.');
-                    document.getElementById('ticketForm').reset();
-                    bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Ticket Berhasil Dibuat!',
+                        html: `
+                            <div style="text-align: left; margin-top: 20px;">
+                                <p><strong>Nomor Ticket:</strong></p>
+                                <p style="background: #f0f0f0; padding: 10px; border-radius: 6px; font-weight: bold; color: #667eea; font-size: 1.1em;">
+                                    ${data.data.ticket_number}
+                                </p>
+                                <p style="margin-top: 15px; color: #666; font-size: 0.95em;">
+                                    Simpan nomor ini untuk melacak status ticket Anda.
+                                </p>
+                            </div>
+                        `,
+                        showConfirmButton: true,
+                        confirmButtonText: 'Buka Chat',
+                        showCancelButton: true,
+                        cancelButtonText: 'Tutup',
+                        confirmButtonColor: '#667eea'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = 'chat.php?ticket=' + encodeURIComponent(data.data.ticket_number);
+                        } else {
+                            document.getElementById('ticketForm').reset();
+                            bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+                        }
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Membuat Ticket',
+                        text: data.message || 'Terjadi kesalahan. Silakan coba lagi.',
+                        confirmButtonColor: '#667eea'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan. Silakan coba lagi.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan',
+                    text: 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.',
+                    confirmButtonColor: '#667eea'
+                });
             });
         });
 

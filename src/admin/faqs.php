@@ -35,6 +35,7 @@ if ($result = $db->query("SELECT * FROM faqs ORDER BY created_at DESC")) {
     <title>FAQ Management - Helpdesk Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #667eea;
@@ -406,6 +407,7 @@ if ($result = $db->query("SELECT * FROM faqs ORDER BY created_at DESC")) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
         function resetFaqForm() {
             document.getElementById('faqId').value = '';
@@ -428,7 +430,12 @@ if ($result = $db->query("SELECT * FROM faqs ORDER BY created_at DESC")) {
             const answer = document.getElementById('answer').value.trim();
 
             if (!question || !answer) {
-                alert('Pertanyaan dan jawaban harus diisi!');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Tidak Lengkap',
+                    text: 'Pertanyaan dan jawaban harus diisi!',
+                    confirmButtonColor: '#667eea'
+                });
                 return;
             }
 
@@ -447,42 +454,84 @@ if ($result = $db->query("SELECT * FROM faqs ORDER BY created_at DESC")) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('faqModal')).hide();
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: id ? 'FAQ berhasil diupdate' : 'FAQ berhasil ditambah',
+                        confirmButtonColor: '#667eea'
+                    }).then(() => {
+                        location.reload();
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonColor: '#667eea'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan',
+                    confirmButtonColor: '#667eea'
+                });
             });
         }
 
         function deleteFaq(id) {
-            if (!confirm('Yakin ingin menghapus FAQ ini?')) {
-                return;
-            }
+            Swal.fire({
+                title: 'Hapus FAQ?',
+                text: 'Tindakan ini tidak dapat dibatalkan!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#667eea',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('id', id);
+                    formData.append('csrf_token', '<?php echo getCsrfToken(); ?>');
 
-            const formData = new FormData();
-            formData.append('id', id);
-            formData.append('csrf_token', '<?php echo getCsrfToken(); ?>');
-
-            fetch('../api/delete-faq.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
+                    fetch('../api/delete-faq.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Dihapus!',
+                                text: 'FAQ berhasil dihapus',
+                                confirmButtonColor: '#667eea'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message,
+                                confirmButtonColor: '#667eea'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan',
+                            confirmButtonColor: '#667eea'
+                        });
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan');
             });
         }
     </script>

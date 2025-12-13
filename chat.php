@@ -6,6 +6,7 @@
     <title>Chat Support - Helpdesk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #667eea;
@@ -411,6 +412,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
         let currentTicketId = null;
         let messageRefreshInterval = null;
@@ -508,7 +510,12 @@
             const message = document.getElementById('messageInput').value.trim();
             
             if (!message || !currentTicketId) {
-                showError('Pesan tidak boleh kosong');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pesan Kosong',
+                    text: 'Silakan ketik pesan sebelum mengirim',
+                    confirmButtonColor: '#667eea'
+                });
                 return;
             }
 
@@ -530,6 +537,16 @@
                     document.getElementById('messageInput').value = '';
                     document.getElementById('errorMessage').innerHTML = '';
                     loadMessages();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pesan Terkirim',
+                        text: 'Pesan Anda sudah dikirim ke tim support',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        position: 'top-end',
+                        toast: true
+                    });
                 } else {
                     showError(data.message || 'Gagal mengirim pesan');
                 }
@@ -545,12 +562,12 @@
         }
 
         function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle me-2"></i>${message}
-                </div>
-            `;
+            Swal.fire({
+                icon: 'error',
+                title: 'Kesalahan',
+                text: message,
+                confirmButtonColor: '#667eea'
+            });
         }
 
         // Allow sending with Ctrl+Enter

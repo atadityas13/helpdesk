@@ -44,6 +44,7 @@ if ($result = $db->query("
     <title>Kelola Tickets - Helpdesk Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #667eea;
@@ -472,6 +473,7 @@ if ($result = $db->query("
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
         let currentTicketId = null;
         let messageRefreshInterval = null;
@@ -539,7 +541,12 @@ if ($result = $db->query("
         function sendAdminMessage() {
             const message = document.getElementById('messageInput').value.trim();
             if (!message || !currentTicketId) {
-                alert('Pesan tidak boleh kosong');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pesan Kosong',
+                    text: 'Silakan ketik pesan sebelum mengirim',
+                    confirmButtonColor: '#667eea'
+                });
                 return;
             }
 
@@ -557,11 +564,34 @@ if ($result = $db->query("
                 if (data.success) {
                     document.getElementById('messageInput').value = '';
                     loadTicketMessages(currentTicketId);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pesan Terkirim',
+                        text: 'Pesan Anda sudah dikirim',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        position: 'top-end',
+                        toast: true
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonColor: '#667eea'
+                    });
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal mengirim pesan',
+                    confirmButtonColor: '#667eea'
+                });
+            });
         }
 
         function updateTicketStatus() {
@@ -580,12 +610,33 @@ if ($result = $db->query("
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Status updated');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Status Updated',
+                        text: 'Status ticket berhasil diubah',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        position: 'top-end',
+                        toast: true
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonColor: '#667eea'
+                    });
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal mengupdate status',
+                    confirmButtonColor: '#667eea'
+                });
+            });
         }
 
         window.addEventListener('beforeunload', () => {

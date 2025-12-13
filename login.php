@@ -6,6 +6,7 @@
     <title>Admin Login - Helpdesk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #667eea;
@@ -288,6 +289,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -307,21 +309,28 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.href = 'src/admin/dashboard.php';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Login Berhasil!',
+                        text: 'Mengarahkan ke dashboard...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                            setTimeout(() => {
+                                window.location.href = 'src/admin/dashboard.php';
+                            }, 1500);
+                        }
+                    });
                 } else {
                     btn.disabled = false;
                     btn.innerHTML = originalText;
                     
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-danger';
-                    alert.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + 
-                                     (data.message || 'Login gagal. Periksa kembali kredensial Anda.');
-                    document.querySelector('.login-body').insertBefore(
-                        alert, 
-                        document.getElementById('loginForm')
-                    );
-                    
-                    setTimeout(() => alert.remove(), 5000);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Gagal',
+                        text: data.message || 'Email atau password salah. Silakan coba lagi.',
+                        confirmButtonColor: '#667eea'
+                    });
                 }
             })
             .catch(error => {
@@ -329,15 +338,12 @@
                 btn.innerHTML = originalText;
                 console.error('Error:', error);
                 
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-danger';
-                alert.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Terjadi kesalahan. Silakan coba lagi.';
-                document.querySelector('.login-body').insertBefore(
-                    alert, 
-                    document.getElementById('loginForm')
-                );
-                
-                setTimeout(() => alert.remove(), 5000);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan',
+                    text: 'Terjadi kesalahan saat login. Silakan coba lagi.',
+                    confirmButtonColor: '#667eea'
+                });
             });
         });
 
