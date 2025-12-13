@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Manage Tickets
+ * Admin Manage Tickets - Bootstrap Design
  * Handle ticket management and chat
  */
 
@@ -18,6 +18,23 @@ requireAdminLogin();
 
 // Get database connection
 $db = Database::getInstance();
+
+// Get tickets
+$tickets = [];
+if ($result = $db->query("
+    SELECT t.*, c.name, c.email,
+           COUNT(m.id) as message_count
+    FROM tickets t
+    JOIN customers c ON t.customer_id = c.id
+    LEFT JOIN messages m ON t.id = m.ticket_id
+    WHERE t.status != 'closed'
+    GROUP BY t.id
+    ORDER BY t.updated_at DESC
+")) {
+    while ($row = $result->fetch_assoc()) {
+        $tickets[] = $row;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -25,251 +42,220 @@ $db = Database::getInstance();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Tickets - Helpdesk Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* ===== CSS Custom Properties / Variables ===== */
         :root {
             --primary: #667eea;
-            --primary-light: #7c8ef0;
             --primary-dark: #5568d3;
             --secondary: #764ba2;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
             --info: #3b82f6;
-            --light: #f9fafb;
-            --lighter: #f3f4f6;
-            --border: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --text-light: #9ca3af;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --radius: 8px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            background: var(--lighter);
-            color: var(--text-primary);
-            line-height: 1.6;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ===== Dashboard Layout ===== */
-        .dashboard {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            height: 100vh;
-            overflow: hidden;
-            background: var(--lighter);
-        }
-
-        /* ===== Sidebar ===== */
         .sidebar {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 25px 20px;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            min-height: 100vh;
+            position: fixed;
+            width: 260px;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
         }
 
-        .sidebar h2 {
-            font-size: 22px;
+        .sidebar .navbar-brand {
+            color: white !important;
+            font-size: 1.5em;
+            font-weight: 800;
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .sidebar .nav-link:hover {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar .nav-link.active {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left-color: white;
             font-weight: 700;
-            letter-spacing: -0.5px;
         }
 
-        .sidebar-menu {
-            list-style: none;
+        .nav-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 12px 0;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            flex: 1;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .sidebar-menu li {
+        .top-bar h1 {
+            font-size: 2em;
+            font-weight: 800;
+            color: #1f2937;
             margin: 0;
         }
 
-        .sidebar-menu a {
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            display: block;
-            padding: 12px 15px;
-            border-radius: var(--radius);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
-        }
-
-        .sidebar-menu a:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            transform: translateX(4px);
-        }
-
-        .sidebar-menu a.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* ===== Main Content ===== */
-        .main-content {
+        .ticket-container {
             display: grid;
-            grid-template-columns: 320px 1fr;
-            overflow: hidden;
-            background: white;
-            gap: 0;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
         }
 
-        /* ===== Ticket List ===== */
-        .ticket-list {
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            overflow-x: hidden;
-            background: var(--light);
-            max-height: 100%;
+        .ticket-list-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .ticket-list-header {
-            padding: 18px 16px;
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 2px solid #e5e7eb;
+            padding: 20px;
             font-weight: 700;
-            color: var(--text-primary);
-            font-size: 15px;
-            letter-spacing: -0.3px;
-            flex-shrink: 0;
+            color: #1f2937;
         }
 
-        #ticketListContainer {
+        .ticket-list-body {
             flex: 1;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
         }
 
         .ticket-item {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
             cursor: pointer;
             transition: all 0.2s ease;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            border-left: 3px solid transparent;
         }
 
         .ticket-item:hover {
-            background: var(--lighter);
-            transform: translateX(3px);
+            background-color: #f9fafb;
         }
 
         .ticket-item.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border-left: 3px solid var(--primary);
-            padding-left: 13px;
-            box-shadow: inset -2px 0 8px rgba(102, 126, 234, 0.1);
+            background-color: rgba(102, 126, 234, 0.1);
+            border-left-color: var(--primary);
         }
 
-        .ticket-item-number {
+        .ticket-number {
             font-weight: 700;
             color: var(--primary);
-            font-size: 14px;
-            letter-spacing: -0.3px;
+            font-size: 0.9em;
+            margin-bottom: 6px;
         }
 
-        .ticket-item-subject {
-            font-size: 13px;
-            color: var(--text-secondary);
+        .ticket-subject {
+            color: #1f2937;
+            font-size: 0.95em;
+            margin-bottom: 8px;
             line-height: 1.4;
         }
 
-        .ticket-item-status {
+        .ticket-status {
             display: inline-block;
             padding: 4px 10px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 0.75em;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: fit-content;
         }
 
         .badge-open {
-            background: rgba(59, 130, 246, 0.1);
-            color: #1d4ed8;
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #92400e;
         }
 
         .badge-in-progress {
-            background: rgba(245, 158, 11, 0.1);
-            color: #b45309;
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #1e40af;
         }
 
         .badge-resolved {
-            background: rgba(16, 185, 129, 0.1);
+            background-color: rgba(16, 185, 129, 0.15);
             color: #065f46;
         }
 
         .badge-closed {
-            background: rgba(239, 68, 68, 0.1);
-            color: #7f1d1d;
+            background-color: rgba(107, 114, 128, 0.15);
+            color: #374151;
         }
 
-        /* ===== Chat Window ===== */
-        .chat-window {
+        .chat-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: white;
         }
 
         .chat-header {
-            padding: 24px;
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 20px;
         }
 
         .chat-header h2 {
-            font-size: 18px;
+            font-size: 1.2em;
             font-weight: 700;
-            margin-bottom: 6px;
-            color: var(--text-primary);
-            letter-spacing: -0.3px;
+            color: #1f2937;
+            margin: 0 0 4px 0;
         }
 
         .chat-header p {
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 0.9em;
+            color: #6b7280;
+            margin: 0;
         }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
-            background: var(--light);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            padding: 20px;
+            background-color: #f9fafb;
         }
 
-        /* ===== Messages ===== */
         .message {
+            margin-bottom: 16px;
             display: flex;
-            margin-bottom: 0;
+            gap: 12px;
         }
 
         .message.admin {
@@ -277,29 +263,18 @@ $db = Database::getInstance();
         }
 
         .message-bubble {
-            max-width: 65%;
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-size: 14px;
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.95em;
             line-height: 1.5;
-            box-shadow: var(--shadow-sm);
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            word-wrap: break-word;
         }
 
         .message.customer .message-bubble {
             background: white;
-            color: var(--text-primary);
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
             border-left: 3px solid var(--info);
         }
 
@@ -308,285 +283,157 @@ $db = Database::getInstance();
             color: white;
         }
 
-        .message-bubble strong {
-            display: block;
-            margin-bottom: 4px;
+        .message-sender {
             font-weight: 700;
-            font-size: 13px;
-            opacity: 0.95;
+            font-size: 0.85em;
+            margin-bottom: 4px;
         }
 
-        .message-bubble > div:last-child {
-            font-size: 12px;
-            margin-top: 8px;
-            opacity: 0.75;
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 6px;
             font-style: italic;
         }
 
-        /* ===== Chat Input Area ===== */
         .chat-input-area {
-            padding: 20px 24px;
+            border-top: 1px solid #e5e7eb;
+            padding: 20px;
             background: white;
-            border-top: 1px solid var(--border);
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
         }
 
-        .chat-input-area > div {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .status-select {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-size: 0.95em;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-family: inherit;
-            resize: none;
-            font-size: 14px;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-            background: var(--light);
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: white;
+            resize: vertical;
+            min-height: 80px;
         }
 
         .btn-send {
-            padding: 11px 20px;
+            width: 100%;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            border-radius: var(--radius);
-            cursor: pointer;
+            padding: 10px;
+            border-radius: 6px;
             font-weight: 700;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            letter-spacing: -0.3px;
-            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .btn-send:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-send:active {
-            transform: translateY(0);
-        }
-
-        .status-select {
-            padding: 11px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            width: 100%;
-            font-size: 14px;
-            background: var(--light);
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .status-select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: white;
-        }
-
-        .no-ticket {
-            padding: 40px 24px;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 14px;
-            flex: 1;
+        .empty-state {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            height: 100%;
+            color: #6b7280;
+            text-align: center;
         }
 
-        /* ===== Scrollbar Styling ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-light);
-        }
-
-        /* ===== Responsive Design ===== */
-        @media (max-width: 1024px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100vh;
-                z-index: 1000;
-                width: 250px;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-
-            .ticket-list {
-                display: none;
-            }
+        .empty-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
         }
 
         @media (max-width: 768px) {
-            .dashboard {
-                height: auto;
-                min-height: 100vh;
-            }
-
-            .chat-window {
-                min-height: 100vh;
-            }
-
-            .chat-messages {
-                padding: 16px;
-            }
-
-            .message-bubble {
-                max-width: 85%;
-            }
-
-            .chat-header {
-                padding: 16px;
-            }
-
-            .chat-input-area {
-                padding: 12px 16px;
-            }
-
-            textarea {
-                min-height: 80px;
-            }
-
-            .btn-send {
-                padding: 10px 16px;
-            }
-        }
-
-        @media (max-width: 480px) {
             .sidebar {
                 width: 100%;
+                height: auto;
+                position: relative;
+                display: block;
             }
 
-            .chat-header h2 {
-                font-size: 16px;
+            .main-content {
+                margin-left: 0;
+                padding: 20px 15px;
             }
 
-            .chat-header p {
-                font-size: 12px;
+            .ticket-container {
+                grid-template-columns: 1fr;
+                height: auto;
             }
 
-            .message-bubble {
-                max-width: 95%;
-                padding: 12px 14px;
-                font-size: 13px;
+            .ticket-list-card {
+                max-height: 300px;
             }
 
-            .chat-messages {
-                padding: 12px;
-                gap: 8px;
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .top-bar h1 {
+                font-size: 1.6em;
             }
         }
     </style>
 </head>
 <body>
-    <?php
-    require_once __DIR__ . '/../middleware/session.php';
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../helpers/functions.php';
-    require_once __DIR__ . '/../helpers/ticket.php';
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="navbar-brand">📊 Helpdesk</div>
+        <nav class="nav flex-column p-3">
+            <a class="nav-link" href="dashboard.php">
+                <i class="fas fa-home me-2"></i> Dashboard
+            </a>
+            <a class="nav-link active" href="manage-tickets.php">
+                <i class="fas fa-ticket-alt me-2"></i> Kelola Tickets
+            </a>
+            <a class="nav-link" href="faqs.php">
+                <i class="fas fa-question-circle me-2"></i> FAQ Management
+            </a>
+            <div class="nav-divider"></div>
+            <a class="nav-link" href="../../logout.php">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </nav>
+    </div>
 
-    // Require admin login
-    requireAdminLogin();
-
-    $adminUsername = getAdminUsername();
-    $adminRole = getAdminRole();
-
-    // Get tickets
-    $db = Database::getInstance();
-    $conn = $db->getConnection();
-    
-    $tickets = [];
-    if ($result = $conn->query("
-        SELECT t.*, c.name, c.email,
-               COUNT(m.id) as message_count
-        FROM tickets t
-        JOIN customers c ON t.customer_id = c.id
-        LEFT JOIN messages m ON t.id = m.ticket_id
-        WHERE t.status != 'closed'
-        GROUP BY t.id
-        ORDER BY t.updated_at DESC
-    ")) {
-        while ($row = $result->fetch_assoc()) {
-            $tickets[] = $row;
-        }
-    }
-    ?>
-
-    <div class="dashboard">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <h2>📊 Admin</h2>
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.php">🏠 Dashboard</a></li>
-                <li><a href="manage-tickets.php" class="active">🎫 Kelola Tickets</a></li>
-                <li><a href="faqs.php">❓ FAQ Management</a></li>
-                <li><hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 15px 0;"></li>
-                <li><a href="../../logout.php">🚪 Logout</a></li>
-            </ul>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <h1>🎫 Kelola Tickets</h1>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
+        <div class="ticket-container">
             <!-- Ticket List -->
-            <div class="ticket-list">
+            <div class="ticket-list-card">
                 <div class="ticket-list-header">
-                    🎫 Tickets Aktif (<?php echo count($tickets); ?>)
+                    <i class="fas fa-list me-2"></i> Tickets Aktif (<?php echo count($tickets); ?>)
                 </div>
-                <div id="ticketListContainer">
+                <div class="ticket-list-body">
                     <?php if (empty($tickets)): ?>
-                        <div class="no-ticket">Tidak ada ticket aktif</div>
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>Tidak ada ticket aktif</p>
+                        </div>
                     <?php else: ?>
                         <?php foreach ($tickets as $ticket): ?>
-                            <div class="ticket-item" onclick="selectTicket(<?php echo $ticket['id']; ?>)">
-                                <div class="ticket-item-number"><?php echo $ticket['ticket_number']; ?></div>
-                                <div class="ticket-item-subject"><?php echo htmlspecialchars(truncateText($ticket['subject'], 25)); ?></div>
-                                <span class="ticket-item-status badge-<?php echo str_replace('_', '-', $ticket['status']); ?>">
+                            <div class="ticket-item" onclick="selectTicket(<?php echo $ticket['id']; ?>)" data-ticket-id="<?php echo $ticket['id']; ?>">
+                                <div class="ticket-number"><?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
+                                <div class="ticket-subject"><?php echo htmlspecialchars(substr($ticket['subject'], 0, 35)); ?></div>
+                                <span class="ticket-status badge-<?php echo str_replace('_', '-', $ticket['status']); ?>">
                                     <?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?>
                                 </span>
                             </div>
@@ -596,31 +443,35 @@ $db = Database::getInstance();
             </div>
 
             <!-- Chat Window -->
-            <div class="chat-window">
+            <div class="chat-card">
                 <div class="chat-header">
                     <h2 id="ticketTitle">Pilih Ticket</h2>
                     <p id="ticketSubtitle">Klik ticket di sidebar untuk mulai chat</p>
                 </div>
                 <div class="chat-messages" id="chatMessages">
-                    <div class="no-ticket">Pilih ticket untuk melihat pesan</div>
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <p>Pilih ticket untuk melihat pesan</p>
+                    </div>
                 </div>
                 <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                    <div style="display: grid; gap: 10px;">
-                        <select class="status-select" id="statusSelect" onchange="updateTicketStatus()">
-                            <option value="">Ubah Status...</option>
-                            <option value="open">Open</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                        <textarea id="messageInput" placeholder="Ketik respons..." rows="3"></textarea>
-                    </div>
-                    <button class="btn-send" onclick="sendAdminMessage()">Kirim</button>
+                    <select class="form-select status-select" id="statusSelect" onchange="updateTicketStatus()">
+                        <option value="">Ubah Status...</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                    <textarea class="form-control" id="messageInput" placeholder="Ketik respons..."></textarea>
+                    <button class="btn-send" onclick="sendAdminMessage()">
+                        <i class="fas fa-paper-plane me-2"></i> Kirim
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentTicketId = null;
         let messageRefreshInterval = null;
@@ -630,16 +481,13 @@ $db = Database::getInstance();
             loadTicketMessages(ticketId);
             loadTicketDetails(ticketId);
 
-            // Update active state
             document.querySelectorAll('.ticket-item').forEach(el => {
                 el.classList.remove('active');
             });
-            event.target.closest('.ticket-item').classList.add('active');
+            document.querySelector(`[data-ticket-id="${ticketId}"]`).classList.add('active');
 
-            // Show chat input
-            document.getElementById('chatInputArea').style.display = 'grid';
+            document.getElementById('chatInputArea').style.display = 'block';
 
-            // Start auto-refresh
             if (messageRefreshInterval) clearInterval(messageRefreshInterval);
             messageRefreshInterval = setInterval(() => loadTicketMessages(ticketId), 2000);
         }
@@ -671,14 +519,17 @@ $db = Database::getInstance();
 
         function displayMessages(messages) {
             const container = document.getElementById('chatMessages');
+            if (messages.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Belum ada pesan</p></div>';
+                return;
+            }
+
             container.innerHTML = messages.map(msg => `
                 <div class="message ${msg.sender_type}">
                     <div class="message-bubble">
-                        <strong>${msg.sender_name}</strong><br>
+                        <div class="message-sender">${msg.sender_name}</div>
                         ${msg.message}
-                        <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.7;">
-                            ${msg.created_at_formatted}
-                        </div>
+                        <div class="message-time">${msg.created_at_formatted}</div>
                     </div>
                 </div>
             `).join('');
@@ -737,7 +588,6 @@ $db = Database::getInstance();
             .catch(error => console.error('Error:', error));
         }
 
-        // Cleanup on unload
         window.addEventListener('beforeunload', () => {
             if (messageRefreshInterval) clearInterval(messageRefreshInterval);
         });
