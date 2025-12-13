@@ -26,7 +26,7 @@ try {
         SELECT m.*, 
                CASE 
                    WHEN m.sender_type = 'customer' THEN c.name
-                   WHEN m.sender_type = 'admin' THEN a.name
+                   WHEN m.sender_type = 'admin' THEN a.username
                    ELSE 'System'
                END as sender_name
         FROM messages m

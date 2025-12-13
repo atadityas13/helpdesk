@@ -579,6 +579,39 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
+        function copyTicketNumber(ticketNumber) {
+            // Copy to clipboard
+            navigator.clipboard.writeText(ticketNumber).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Dicopy!',
+                    text: ticketNumber,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    position: 'top-end',
+                    toast: true
+                });
+            }).catch(err => {
+                // Fallback untuk browser lama
+                const textarea = document.createElement('textarea');
+                textarea.value = ticketNumber;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Dicopy!',
+                    text: ticketNumber,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    position: 'top-end',
+                    toast: true
+                });
+            });
+        }
+
         function toggleFaq(header) {
             const item = header.parentElement;
             const isActive = item.classList.contains('active');
@@ -604,15 +637,21 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    const ticketNumber = data.data.ticket_number;
                     Swal.fire({
                         icon: 'success',
                         title: 'Ticket Berhasil Dibuat!',
                         html: `
                             <div style="text-align: left; margin-top: 20px;">
                                 <p><strong>Nomor Ticket:</strong></p>
-                                <p style="background: #f0f0f0; padding: 10px; border-radius: 6px; font-weight: bold; color: #667eea; font-size: 1.1em;">
-                                    ${data.data.ticket_number}
-                                </p>
+                                <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                                    <p style="background: #f0f0f0; padding: 10px 16px; border-radius: 6px; font-weight: bold; color: #667eea; font-size: 1.1em; margin: 0; flex: 1; text-align: center;" id="ticketNumberDisplay">
+                                        ${ticketNumber}
+                                    </p>
+                                    <button onclick="copyTicketNumber('${ticketNumber}')" style="background: #667eea; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
                                 <p style="margin-top: 15px; color: #666; font-size: 0.95em;">
                                     Simpan nomor ini untuk melacak status ticket Anda.
                                 </p>
@@ -625,7 +664,7 @@
                         confirmButtonColor: '#667eea'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = 'chat.php?ticket=' + encodeURIComponent(data.data.ticket_number);
+                            window.location.href = 'chat.php?ticket=' + encodeURIComponent(ticketNumber);
                         } else {
                             document.getElementById('ticketForm').reset();
                             bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();

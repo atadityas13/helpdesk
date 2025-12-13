@@ -526,15 +526,23 @@ if ($result = $db->query("
                 return;
             }
 
-            container.innerHTML = messages.map(msg => `
-                <div class="message ${msg.sender_type}">
-                    <div class="message-bubble">
-                        <div class="message-sender">${msg.sender_name}</div>
-                        ${msg.message}
-                        <div class="message-time">${msg.created_at_formatted}</div>
+            container.innerHTML = messages.map(msg => {
+                const messageClass = msg.sender_type === 'admin' ? 'admin' : 'customer';
+                const date = new Date(msg.created_at);
+                const timeStr = date.toLocaleTimeString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                return `
+                    <div class="message ${messageClass}">
+                        <div class="message-bubble">
+                            <div class="message-sender">${msg.sender_name || 'Unknown'}</div>
+                            <div>${msg.message}</div>
+                            <div class="message-time">${timeStr}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             container.scrollTop = container.scrollHeight;
         }
 

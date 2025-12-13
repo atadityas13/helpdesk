@@ -55,7 +55,7 @@ try {
         INSERT INTO messages (ticket_id, sender_type, sender_id, message)
         VALUES (?, ?, ?, ?)
     ");
-    $stmt->bind_param('isss', $ticketId, $senderType, $customerId, $message);
+    $stmt->bind_param('isis', $ticketId, $senderType, $customerId, $message);
     
     if (!$stmt->execute()) {
         throw new Exception('Gagal mengirim pesan');

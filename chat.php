@@ -491,12 +491,13 @@
                     hour: '2-digit', 
                     minute: '2-digit' 
                 });
+                const messageClass = msg.sender_type === 'admin' ? 'admin' : 'customer';
 
                 return `
-                    <div class="message ${msg.sender_type}">
+                    <div class="message ${messageClass}">
                         <div class="message-bubble">
-                            <div class="message-sender">${msg.sender_name}</div>
-                            ${msg.message}
+                            <div class="message-sender">${msg.sender_name || 'Unknown'}</div>
+                            <div>${msg.message}</div>
                             <div class="message-time">${timeStr}</div>
                         </div>
                     </div>
