@@ -4,52 +4,69 @@
  * Helpdesk MTsN 11 Majalengka
  */
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 require_once '../config/database.php';
 require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
+require_once '../helpers/api-response.php';
+require_once '../helpers/validator.php';
+require_once '../middleware/rate-limit.php';
 
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    jsonResponse(false, 'Invalid request method');
+    errorResponse('Invalid request method', 405);
 }
+
+// Check rate limit berdasarkan IP
+$clientIp = $_SERVER['REMOTE_ADDR'];
+checkRateLimit('create_ticket', $clientIp, $conn);
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
+if (!$input) {
+    errorResponse('Invalid JSON input', 400);
+}
+
 // Validate input
-$name = sanitizeInput($input['name'] ?? '');
-$email = sanitizeInput($input['email'] ?? '');
-$phone = sanitizeInput($input['phone'] ?? '');
-$subject = sanitizeInput($input['subject'] ?? '');
-$message = sanitizeInput($input['message'] ?? '');
+$validator = new Validator($input);
+$validator
+    ->required('name', 'Nama harus diisi')
+    ->required('email', 'Email harus diisi')
+    ->email('email')
+    ->required('subject', 'Subjek harus diisi')
+    ->min('subject', 3, 'Subjek minimal 3 karakter')
+    ->required('message', 'Pesan harus diisi')
+    ->min('message', 5, 'Pesan minimal 5 karakter');
 
-if (empty($name) || empty($email) || empty($subject) || empty($message)) {
-    jsonResponse(false, 'All fields are required');
+if (!$validator->isValid()) {
+    validationErrorResponse($validator->errors());
 }
 
-// Validate email
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    jsonResponse(false, 'Invalid email format');
-}
+$data = $validator->getData();
 
 // Create ticket
 $customerData = [
-    'name' => $name,
-    'email' => $email,
-    'phone' => $phone
+    'name' => $data['name'],
+    'email' => $data['email'],
+    'phone' => $data['phone'] ?? ''
 ];
 
-$result = createTicket($conn, $customerData, $subject, $message);
-
-if ($result['success']) {
-    jsonResponse(true, 'Ticket created successfully', [
-        'ticket_number' => $result['ticket_number'],
-        'ticket_id' => $result['ticket_id'],
-        'customer_id' => $result['customer_id']
-    ]);
-} else {
-    jsonResponse(false, $result['message'] ?? 'Error creating ticket');
+try {
+    $result = createTicket($conn, $customerData, $data['subject'], $data['message']);
+    
+    if ($result['success']) {
+        successResponse('Ticket berhasil dibuat', [
+            'ticket_number' => $result['ticket_number'],
+            'ticket_id' => $result['ticket_id'],
+            'customer_id' => $result['customer_id']
+        ], 201);
+    } else {
+        errorResponse($result['message'] ?? 'Gagal membuat ticket', 400);
+    }
+} catch (Exception $e) {
+    error_log("Error creating ticket: " . $e->getMessage());
+    serverErrorResponse('Gagal membuat ticket');
 }
 ?>

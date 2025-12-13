@@ -4,27 +4,7 @@
  * Helpdesk MTsN 11 Majalengka
  */
 
-session_start();
-
-/**
- * Require admin to be logged in
- * If not, redirect to login
- */
-function requireAdminLogin() {
-    if (!isset($_SESSION['admin_id']) || empty($_SESSION['admin_id'])) {
-        header('Location: ../login.php');
-        exit;
-    }
-}
-
-/**
- * Logout admin
- */
-function logoutAdmin() {
-    session_destroy();
-    header('Location: ../login.php');
-    exit;
-}
+require_once __DIR__ . '/session.php';
 
 /**
  * Verify admin password
@@ -34,14 +14,14 @@ function verifyAdminPassword($conn, $username, $password) {
     $stmt = $conn->prepare($query);
     
     if (!$stmt) {
-        error_log("Prepare failed: " . $conn->error);
+        error_log("Database prepare failed: " . $conn->error);
         return false;
     }
     
     $stmt->bind_param("s", $username);
     
     if (!$stmt->execute()) {
-        error_log("Execute failed: " . $stmt->error);
+        error_log("Database execute failed: " . $stmt->error);
         return false;
     }
     
@@ -49,14 +29,13 @@ function verifyAdminPassword($conn, $username, $password) {
     $stmt->close();
     
     if (!$result) {
-        error_log("User not found: $username");
+        // User not found - log tanpa expose username
+        error_log("Login attempt failed: User not found");
         return false;
     }
     
-    error_log("User found: $username, Hash: " . substr($result['password'], 0, 20) . "...");
-    
+    // Verify password dengan bcrypt
     $isValid = password_verify($password, $result['password']);
-    error_log("Password verify result: " . ($isValid ? "true" : "false"));
     
     if ($isValid) {
         $_SESSION['admin_id'] = $result['id'];
@@ -64,6 +43,8 @@ function verifyAdminPassword($conn, $username, $password) {
         return true;
     }
     
+    // Password invalid - log tanpa expose details
+    error_log("Login attempt failed: Invalid password");
     return false;
 }
 ?>

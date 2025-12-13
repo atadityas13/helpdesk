@@ -4,42 +4,58 @@
  * Helpdesk MTsN 11 Majalengka
  */
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 require_once '../config/database.php';
-require_once '../middleware/auth.php';
+require_once '../middleware/session.php';
 require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
+require_once '../helpers/api-response.php';
+require_once '../helpers/validator.php';
 
 // Require admin login
 requireAdminLogin();
 
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    jsonResponse(false, 'Invalid request method');
+    errorResponse('Invalid request method', 405);
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
+$input = json_decode(file_get_contents('php://input'), true) ?? [];
 
-$ticketId = sanitizeInput($input['ticket_id'] ?? '');
-$status = sanitizeInput($input['status'] ?? '');
+// Validate input
+$validator = new Validator($input);
+$validator
+    ->required('ticket_id', 'ID ticket harus diisi')
+    ->numeric('ticket_id', 'ID ticket harus berupa angka')
+    ->required('status', 'Status harus diisi');
 
-if (empty($ticketId) || empty($status)) {
-    jsonResponse(false, 'Ticket ID and status are required');
+if (!$validator->isValid()) {
+    validationErrorResponse($validator->errors());
 }
 
-// Validate status
+$data = $validator->getData();
+$ticketId = $data['ticket_id'];
+$status = $data['status'];
+
+// Validate status value
 $validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
 if (!in_array($status, $validStatuses)) {
-    jsonResponse(false, 'Invalid status');
+    errorResponse('Status tidak valid', 400);
 }
 
 // Update status
-$result = updateTicketStatus($conn, $ticketId, $status);
-
-if ($result['success']) {
-    jsonResponse(true, 'Ticket status updated successfully');
-} else {
-    jsonResponse(false, $result['message'] ?? 'Error updating ticket status');
+try {
+    $result = updateTicketStatus($conn, $ticketId, $status);
+    
+    if ($result['success']) {
+        successResponse('Status ticket berhasil diubah');
+    } else {
+        errorResponse($result['message'] ?? 'Gagal mengubah status ticket', 400);
+    }
+} catch (Exception $e) {
+    error_log("Error updating ticket status: " . $e->getMessage());
+    serverErrorResponse();
 }
 ?>
+

@@ -4,28 +4,32 @@
  * Helpdesk MTsN 11 Majalengka
  */
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 require_once '../config/database.php';
 require_once '../helpers/functions.php';
 require_once '../helpers/ticket.php';
+require_once '../helpers/api-response.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $ticketNumber = sanitizeInput($_GET['ticket_number'] ?? '');
-    
-    if (empty($ticketNumber)) {
-        jsonResponse(false, 'Ticket number is required');
-    }
-    
-    // Get ticket
-    $ticket = getTicketByNumber($conn, $ticketNumber);
-    
-    if (!$ticket) {
-        jsonResponse(false, 'Ticket not found');
-    }
-    
-    // Get messages dengan sender info
-    $query = "SELECT 
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    errorResponse('Invalid request method', 405);
+}
+
+$ticketNumber = sanitizeInput($_GET['ticket_number'] ?? '');
+
+if (empty($ticketNumber)) {
+    errorResponse('Nomor ticket harus diisi', 400);
+}
+
+// Get ticket
+$ticket = getTicketByNumber($conn, $ticketNumber);
+
+if (!$ticket) {
+    notFoundResponse('Ticket tidak ditemukan');
+}
+
+// Get messages dengan sender info
+$query = "SELECT 
                 m.id,
                 m.ticket_id,
                 m.sender_type,
@@ -43,37 +47,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
               LEFT JOIN admins a ON m.sender_type = 'admin' AND m.sender_id = a.id
               WHERE m.ticket_id = ?
               ORDER BY m.created_at ASC";
-    
-    $stmt = $conn->prepare($query);
-    
-    if (!$stmt) {
-        error_log("Prepare failed: " . $conn->error);
-        jsonResponse(false, 'Database error');
-    }
-    
-    $stmt->bind_param("i", $ticket['id']);
-    
-    if (!$stmt->execute()) {
-        error_log("Execute failed: " . $stmt->error);
-        jsonResponse(false, 'Error fetching messages');
-    }
-    
-    $result = $stmt->get_result();
-    $messages = $result->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-    
-    // Ensure sender_type dan is_read format correct
-    foreach ($messages as &$msg) {
-        $msg['sender_type'] = strtolower($msg['sender_type']);
-        $msg['is_read'] = (bool) $msg['is_read'];
-    }
-    unset($msg);
-    
-    jsonResponse(true, 'Messages fetched', [
-        'ticket' => $ticket,
-        'messages' => $messages
-    ]);
-    
-} else {
-    jsonResponse(false, 'Invalid request method');
+
+$stmt = $conn->prepare($query);
+
+if (!$stmt) {
+    error_log("Database prepare failed: " . $conn->error);
+    serverErrorResponse();
 }
+
+$stmt->bind_param("i", $ticket['id']);
+
+if (!$stmt->execute()) {
+    error_log("Database execute failed: " . $stmt->error);
+    $stmt->close();
+    serverErrorResponse();
+}
+
+$result = $stmt->get_result();
+$messages = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Format data
+foreach ($messages as &$msg) {
+    $msg['sender_type'] = strtolower($msg['sender_type']);
+    $msg['is_read'] = (bool) $msg['is_read'];
+}
+unset($msg);
+
+successResponse('Pesan berhasil diambil', [
+    'ticket' => $ticket,
+    'messages' => $messages
+]);
+?>

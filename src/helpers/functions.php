@@ -15,17 +15,13 @@ function generateTicketNumber() {
 }
 
 /**
- * Sanitize input
+ * Sanitize input untuk output (HTML)
  */
 function sanitizeInput($data) {
+    if (is_array($data)) {
+        return array_map('sanitizeInput', $data);
+    }
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
-}
-
-/**
- * Check if user is logged in (admin)
- */
-function isAdminLoggedIn() {
-    return isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
 }
 
 /**
@@ -85,16 +81,5 @@ function logError($message) {
     file_put_contents($logFile, "[{$timestamp}] {$message}\n", FILE_APPEND);
 }
 
-/**
- * JSON response
- */
-function jsonResponse($success, $message, $data = null) {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => $success,
-        'message' => $message,
-        'data' => $data
-    ]);
-    exit;
-}
 ?>
+
