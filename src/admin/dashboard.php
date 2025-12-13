@@ -18,12 +18,18 @@ $ticketsQuery = "SELECT
                     SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved
                 FROM tickets";
 
-$stats = $conn->query($ticketsQuery)->fetch_assoc();
+$statsResult = $conn->query($ticketsQuery);
+$stats = $statsResult ? $statsResult->fetch_assoc() : [
+    'total' => 0,
+    'open' => 0,
+    'in_progress' => 0,
+    'resolved' => 0
+];
 
 // Get unread message count for notification badge
 $unreadQuery = "SELECT COUNT(*) as unread FROM messages WHERE sender_type = 'customer' AND is_read = 0";
 $unreadResult = $conn->query($unreadQuery);
-$unreadCount = $unreadResult->fetch_assoc()['unread'];
+$unreadCount = $unreadResult ? $unreadResult->fetch_assoc()['unread'] : 0;
 
 // Filter status (optional)
 $statusFilter = $_GET['status'] ?? 'all';
@@ -32,31 +38,42 @@ if (!in_array($statusFilter, $allowedStatuses, true)) {
     $statusFilter = 'all';
 }
 
-// Get recent tickets
+// Get recent tickets with prepared statement
 $recentTicketsQuery = "SELECT t.*, c.name, c.email, COUNT(m.id) as message_count
                        FROM tickets t
                        JOIN customers c ON t.customer_id = c.id
                        LEFT JOIN messages m ON t.id = m.ticket_id";
 
 if ($statusFilter !== 'all') {
-    $recentTicketsQuery .= " WHERE t.status = '" . $conn->real_escape_string($statusFilter) . "'";
+    $recentTicketsQuery .= " WHERE t.status = ?";
 }
 
 $recentTicketsQuery .= " GROUP BY t.id
                         ORDER BY t.updated_at DESC
                         LIMIT 10";
 
-$recentTickets = $conn->query($recentTicketsQuery)->fetch_all(MYSQLI_ASSOC);
+$stmt = $conn->prepare($recentTicketsQuery);
+if ($stmt) {
+    if ($statusFilter !== 'all') {
+        $stmt->bind_param("s", $statusFilter);
+    }
+    $stmt->execute();
+    $recentTickets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+} else {
+    $recentTickets = [];
+}
 
 // Get recent activities (messages) for WhatsApp-like feed
-$activitiesQuery = "SELECT m.*, t.ticket_number, c.name
+$activitiesQuery = "SELECT m.*, t.ticket_number, c.name, t.id as ticket_id
                     FROM messages m
                     JOIN tickets t ON m.ticket_id = t.id
                     JOIN customers c ON t.customer_id = c.id
                     ORDER BY m.created_at DESC
                     LIMIT 20";
 
-$activities = $conn->query($activitiesQuery)->fetch_all(MYSQLI_ASSOC);
+$activitiesResult = $conn->query($activitiesQuery);
+$activities = $activitiesResult ? $activitiesResult->fetch_all(MYSQLI_ASSOC) : [];
 ?>
 
 <!DOCTYPE html>
@@ -220,7 +237,7 @@ $activities = $conn->query($activitiesQuery)->fetch_all(MYSQLI_ASSOC);
                     <div class="activity-feed">
                         <?php if (count($activities) > 0): ?>
                             <?php foreach ($activities as $activity): ?>
-                                <div class="activity-item <?php echo $activity['is_read'] ? '' : 'unread'; ?>" data-ticket="<?php echo $activity['ticket_number']; ?>">
+                                <div class="activity-item <?php echo $activity['is_read'] ? '' : 'unread'; ?>" data-ticket-id="<?php echo $activity['ticket_id']; ?>" style="cursor: pointer;">
                                     <div class="activity-avatar">
                                         <?php echo strtoupper(substr($activity['name'], 0, 1)); ?>
                                     </div>
@@ -247,48 +264,6 @@ $activities = $conn->query($activitiesQuery)->fetch_all(MYSQLI_ASSOC);
                     </div>
                 </section>
             </div>
-
-            <!-- Recent Tickets -->
-            <section class="dashboard-section">
-                <div class="section-header">
-                    <h2>Tickets Terbaru</h2>
-                    <div class="ticket-filters">
-                        <a href="?status=all" class="<?php echo $statusFilter === 'all' ? 'active' : ''; ?>">All</a>
-                        <a href="?status=open" class="<?php echo $statusFilter === 'open' ? 'active' : ''; ?>">Open</a>
-                        <a href="?status=in_progress" class="<?php echo $statusFilter === 'in_progress' ? 'active' : ''; ?>">In Progress</a>
-                        <a href="?status=resolved" class="<?php echo $statusFilter === 'resolved' ? 'active' : ''; ?>">Resolved</a>
-                        <a href="?status=closed" class="<?php echo $statusFilter === 'closed' ? 'active' : ''; ?>">Closed</a>
-                    </div>
-                </div>
-                
-                <div class="ticket-list-modern">
-                    <?php if (count($recentTickets) > 0): ?>
-                        <?php foreach ($recentTickets as $ticket): ?>
-                            <a href="manage-tickets.php?ticket=<?php echo $ticket['id']; ?>" class="ticket-card">
-                                <div class="ticket-card-left">
-                                    <div class="ticket-customer-avatar">
-                                        <?php echo strtoupper(substr($ticket['name'], 0, 1)); ?>
-                                    </div>
-                                    <div class="ticket-details">
-                                        <div class="ticket-subject"><?php echo htmlspecialchars($ticket['subject']); ?></div>
-                                        <div class="ticket-customer-name"><?php echo htmlspecialchars($ticket['name']); ?> • <?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
-                                    </div>
-                                </div>
-                                <div class="ticket-card-right">
-                                    <span class="badge <?php echo getStatusBadge($ticket['status']); ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?>
-                                    </span>
-                                    <div class="ticket-time"><?php echo formatDateTime($ticket['updated_at']); ?></div>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="no-tickets-found">
-                            <p>Tidak ada tiket dengan status "<?php echo htmlspecialchars($statusFilter); ?>"</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
         </main>
     </div>
 
@@ -365,8 +340,10 @@ $activities = $conn->query($activitiesQuery)->fetch_all(MYSQLI_ASSOC);
             // Click on activity item to open ticket
             document.querySelectorAll('.activity-item').forEach(item => {
                 item.addEventListener('click', function() {
-                    const ticketNumber = this.dataset.ticket;
-                    window.location.href = `manage-tickets.php?ticket=${ticketNumber}`;
+                    const ticketId = this.dataset.ticketId;
+                    if (ticketId) {
+                        window.location.href = `manage-tickets.php?ticket=${ticketId}`;
+                    }
                 });
             });
         }
