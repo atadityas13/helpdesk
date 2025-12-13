@@ -41,15 +41,20 @@ $unreadResult = $conn->query($unreadQuery);
 $unreadCount = $unreadResult ? $unreadResult->fetch_assoc()['unread'] : 0;
 
 // Get all tickets with error handling
-$allTicketsQuery = "SELECT t.*, c.name, COUNT(m.id) as message_count
+$allTicketsQuery = "SELECT t.id, t.ticket_number, t.subject, t.status, t.customer_id, t.created_at, t.updated_at, c.name, COUNT(m.id) as message_count
                     FROM tickets t
                     JOIN customers c ON t.customer_id = c.id
                     LEFT JOIN messages m ON t.id = m.ticket_id
-                    GROUP BY t.id
+                    GROUP BY t.id, t.ticket_number, t.subject, t.status, t.customer_id, t.created_at, t.updated_at, c.name
                     ORDER BY t.updated_at DESC";
 
 $ticketsResult = $conn->query($allTicketsQuery);
-$allTickets = $ticketsResult ? $ticketsResult->fetch_all(MYSQLI_ASSOC) : [];
+if (!$ticketsResult) {
+    error_log("Tickets query error: " . $conn->error);
+    $allTickets = [];
+} else {
+    $allTickets = $ticketsResult->fetch_all(MYSQLI_ASSOC) ?? [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
