@@ -487,16 +487,8 @@ if ($result = $db->query("
         let currentTicketId = null;
         let messageRefreshInterval = null;
         
-        // Debug info
-        console.log('manage-tickets.php loaded');
-        console.log('Current path:', window.location.pathname);
-
         function selectTicket(ticketId) {
-            console.log('selectTicket called with ID:', ticketId);
-            console.log('Type of ticketId:', typeof ticketId);
-            
             if (!ticketId || isNaN(ticketId)) {
-                console.error('Invalid ticket ID:', ticketId);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -515,13 +507,9 @@ if ($result = $db->query("
             const ticketEl = document.getElementById(`ticket-${ticketId}`);
             if (ticketEl) {
                 ticketEl.classList.add('active');
-                console.log('Ticket item highlighted');
-            } else {
-                console.warn('Ticket element not found:', `ticket-${ticketId}`);
             }
 
             document.getElementById('chatInputArea').style.display = 'block';
-            console.log('Chat input area shown');
 
             // Load data
             loadTicketDetails(ticketId);
@@ -537,14 +525,9 @@ if ($result = $db->query("
         }
 
         function loadTicketDetails(ticketId) {
-            console.log('Loading ticket details for ID:', ticketId);
             fetch(`../api/get-ticket.php?id=${ticketId}`)
-                .then(response => {
-                    console.log('API response status:', response.status);
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('Ticket data:', data);
                     if (data.success) {
                         const ticket = data.data;
                         document.getElementById('ticketTitle').textContent = ticket.ticket_number;
@@ -555,14 +538,12 @@ if ($result = $db->query("
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.message || 'Gagal memuat ticket',
-                            confirmButtonColor: '#667eea'
+                            
                         });
                     }
                 })
                 .catch(error => {
-                    console.error('Fetch error:', error);
-                    Swal.fire({
+                    console.error
                         icon: 'error',
                         title: 'Error',
                         text: 'Gagal memuat ticket: ' + error.message,
@@ -572,23 +553,16 @@ if ($result = $db->query("
         }
 
         function loadTicketMessages(ticketId) {
-            console.log('Loading ticket messages for ID:', ticketId);
             fetch(`../api/get-ticket-messages.php?ticket_id=${ticketId}`)
-                .then(response => {
-                    console.log('Messages API response status:', response.status);
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('Messages data:', data);
                     if (data.success) {
                         displayMessages(data.data.messages);
                     } else {
-                        console.error('Messages API error:', data.message);
                     }
                 })
                 .catch(error => {
-                    console.error('Messages fetch error:', error);
-                });
+                    console.error
         }
 
         function displayMessages(messages) {
