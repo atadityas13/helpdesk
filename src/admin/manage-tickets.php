@@ -428,15 +428,19 @@ if ($result = $db->query("
                         <div class="empty-state">
                             <div class="empty-icon">📭</div>
                             <p>Tidak ada ticket aktif</p>
+                            <small style="color: #6b7280; margin-top: 10px; display: block;">
+                                Buat ticket dari halaman <a href="../../index.php" style="color: #667eea;">customer</a>
+                            </small>
                         </div>
                     <?php else: ?>
                         <?php foreach ($tickets as $ticket): ?>
                             <div class="ticket-item" 
-                                 onclick="selectTicket(<?php echo (int)$ticket['id']; ?>); return false;" 
+                                 id="ticket-<?php echo (int)$ticket['id']; ?>"
+                                 onclick="return selectTicket(<?php echo (int)$ticket['id']; ?>);" 
                                  data-ticket-id="<?php echo (int)$ticket['id']; ?>"
                                  role="button"
                                  tabindex="0"
-                                 style="user-select: none;">
+                                 style="user-select: none; cursor: pointer;">
                                 <div class="ticket-number"><?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
                                 <div class="ticket-subject"><?php echo htmlspecialchars(substr($ticket['subject'], 0, 35)); ?></div>
                                 <span class="ticket-status badge-<?php echo str_replace('_', '-', $ticket['status']); ?>">
@@ -489,18 +493,35 @@ if ($result = $db->query("
 
         function selectTicket(ticketId) {
             console.log('selectTicket called with ID:', ticketId);
+            console.log('Type of ticketId:', typeof ticketId);
+            
+            if (!ticketId || isNaN(ticketId)) {
+                console.error('Invalid ticket ID:', ticketId);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Invalid ticket ID',
+                    confirmButtonColor: '#667eea'
+                });
+                return false;
+            }
+            
             currentTicketId = ticketId;
             
             // Update UI
             document.querySelectorAll('.ticket-item').forEach(el => {
                 el.classList.remove('active');
             });
-            const ticketEl = document.querySelector(`[data-ticket-id="${ticketId}"]`);
+            const ticketEl = document.getElementById(`ticket-${ticketId}`);
             if (ticketEl) {
                 ticketEl.classList.add('active');
+                console.log('Ticket item highlighted');
+            } else {
+                console.warn('Ticket element not found:', `ticket-${ticketId}`);
             }
 
             document.getElementById('chatInputArea').style.display = 'block';
+            console.log('Chat input area shown');
 
             // Load data
             loadTicketDetails(ticketId);
@@ -509,6 +530,10 @@ if ($result = $db->query("
             // Clear existing interval and set new one
             if (messageRefreshInterval) clearInterval(messageRefreshInterval);
             messageRefreshInterval = setInterval(() => loadTicketMessages(ticketId), 2000);
+            
+            console.log('Message refresh interval started');
+            
+            return false;
         }
 
         function loadTicketDetails(ticketId) {
