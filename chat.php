@@ -4,287 +4,567 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Support - Helpdesk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            box-sizing: border-box;
         }
-        .chat-container {
-            max-width: 800px;
-            margin: 0 auto;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            background: white;
         }
+
+        /* Header */
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 16px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        .chat-header h1 {
-            margin: 0;
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h1 {
             font-size: 1.5em;
+            font-weight: 800;
+            margin: 0;
         }
-        .chat-header p {
-            margin: 5px 0 0 0;
+
+        .header-title p {
+            font-size: 0.9em;
             opacity: 0.9;
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
             font-size: 0.9em;
         }
-        .chat-body {
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            background: white;
+        }
+
+        /* Chat Messages */
+        .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f9f9f9;
-        }
-        .message-group {
-            margin-bottom: 20px;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(248, 249, 250, 1) 0%, rgba(243, 244, 246, 1) 100%);
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 16px;
         }
-        .message-group.customer {
+
+        .message {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .message.customer {
+            justify-content: flex-start;
+        }
+
+        .message.admin {
             justify-content: flex-end;
         }
+
         .message-bubble {
             max-width: 70%;
-            padding: 12px 15px;
-            border-radius: 10px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
             word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        .message-bubble.customer {
-            background: #667eea;
-            color: white;
-            border-bottom-right-radius: 0;
-        }
-        .message-bubble.admin {
+
+        .message.customer .message-bubble {
             background: white;
-            color: #333;
-            border: 1px solid #ddd;
-            border-bottom-left-radius: 0;
+            color: #1f2937;
+            border-left: 3px solid var(--info);
         }
+
+        .message.admin .message-bubble {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .message-sender {
+            font-size: 0.85em;
+            font-weight: 700;
+            margin-bottom: 6px;
+            opacity: 0.8;
+        }
+
         .message-time {
             font-size: 0.8em;
-            opacity: 0.7;
-            margin-top: 5px;
+            opacity: 0.6;
+            margin-top: 6px;
+            font-style: italic;
         }
-        .chat-input {
-            padding: 20px;
-            border-top: 1px solid #ddd;
-            background: white;
+
+        .empty-state {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            text-align: center;
         }
-        .chat-input textarea {
+
+        .empty-icon {
+            font-size: 3.5em;
+            margin-bottom: 16px;
+        }
+
+        /* Chat Input */
+        .chat-input-area {
+            padding: 20px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .input-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .form-group {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             font-family: inherit;
-            font-size: 1em;
-            resize: vertical;
-            max-height: 120px;
-        }
-        .chat-input textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
-        }
-        .btn-send {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+            font-size: 0.95em;
+            resize: none;
+            min-height: 44px;
+            max-height: 100px;
             transition: all 0.3s ease;
         }
-        .btn-send:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+            height: 44px;
+        }
+
+        .btn-send:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
         .btn-send:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
         }
-        .loading {
-            text-align: center;
-            color: #999;
-            padding: 20px;
-        }
-        .error {
-            padding: 15px;
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            border-radius: 5px;
-            margin: 20px;
-        }
+
+        /* Ticket Info */
         .ticket-info {
-            background: #e7f3ff;
-            padding: 15px;
-            border-left: 4px solid #667eea;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-bottom: 1px solid #e5e7eb;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .ticket-info strong {
-            color: #667eea;
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 0.95em;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-open {
+            background: rgba(245, 158, 11, 0.15);
+            color: #92400e;
+        }
+
+        .status-in-progress {
+            background: rgba(59, 130, 246, 0.15);
+            color: #1e40af;
+        }
+
+        .status-resolved {
+            background: rgba(16, 185, 129, 0.15);
+            color: #065f46;
+        }
+
+        .status-closed {
+            background: rgba(107, 114, 128, 0.15);
+            color: #374151;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 3px solid #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .message-bubble {
+                max-width: 90%;
+                padding: 10px 14px;
+            }
+
+            .header-title h1 {
+                font-size: 1.2em;
+            }
+
+            .input-form {
+                flex-direction: column;
+            }
+
+            .btn-send {
+                width: 100%;
+            }
+
+            .ticket-info {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        /* Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>💬 Chat Support</h1>
-            <p id="ticketInfo">Loading...</p>
-        </div>
-
-        <div class="chat-body" id="chatBody">
-            <div class="loading">Loading messages...</div>
-        </div>
-
-        <div class="chat-input">
-            <textarea id="messageInput" placeholder="Ketik pesan Anda..." rows="3"></textarea>
-            <button class="btn-send" id="sendBtn" onclick="sendMessage()">Kirim</button>
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="header-content">
+            <div class="header-title">
+                <i class="fas fa-comments"></i>
+                <div>
+                    <h1>Chat Support</h1>
+                    <p id="headerSubtitle">Menghubungkan ke support...</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-small btn-back" onclick="window.location.href='index.php'">
+                    <i class="fas fa-arrow-left me-2"></i>Kembali
+                </button>
+            </div>
         </div>
     </div>
 
-    <script>
-        let ticketNumber = null;
-        let ticketId = null;
-        let customerId = null;
-        let autoRefresh = null;
+    <!-- Ticket Info -->
+    <div class="ticket-info" id="ticketInfo" style="display: none;">
+        <div class="info-item">
+            <span class="info-label">Nomor Ticket:</span>
+            <span class="info-value" id="ticketNumber">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="status-badge" id="ticketStatus">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Dibuat:</span>
+            <span class="info-value" id="ticketCreated">-</span>
+        </div>
+    </div>
 
-        function getTicketNumberFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('ticket_number') || params.get('ticket_id');
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="empty-state">
+                <div class="empty-icon">🔄</div>
+                <p>Memuat percakapan...</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+            <div id="errorMessage"></div>
+            <div class="input-form">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Ketik pesan Anda di sini... (Enter + Shift untuk baris baru)"
+                    maxlength="5000"
+                ></textarea>
+                <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane me-2"></i>Kirim
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentTicketId = null;
+        let messageRefreshInterval = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketNumber = urlParams.get('ticket');
+
+        if (!ticketNumber) {
+            showError('Nomor ticket tidak ditemukan');
+        } else {
+            loadTicket();
         }
 
-        function loadMessages() {
-            if (!ticketNumber) {
-                document.getElementById('chatBody').innerHTML = '<div class="error">❌ Nomor ticket tidak ditemukan</div>';
-                return;
-            }
-
-            fetch(`src/api/get-messages.php?ticket_number=${encodeURIComponent(ticketNumber)}`)
+        function loadTicket() {
+            fetch(`src/api/get-ticket-by-number.php?ticket_number=${encodeURIComponent(ticketNumber)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        ticketId = data.data.ticket_id;
-                        displayMessages(data.data.messages);
-                        scrollToBottom();
+                        currentTicketId = data.data.ticket.id;
+                        updateTicketInfo(data.data.ticket);
+                        loadMessages();
+                        
+                        // Auto-refresh messages every 2 seconds
+                        if (messageRefreshInterval) clearInterval(messageRefreshInterval);
+                        messageRefreshInterval = setInterval(loadMessages, 2000);
                     } else {
-                        document.getElementById('chatBody').innerHTML = '<div class="error">❌ ' + data.message + '</div>';
+                        showError(data.message || 'Ticket tidak ditemukan');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    showError('Gagal memuat ticket');
                 });
         }
 
-        function displayMessages(messages) {
-            const chatBody = document.getElementById('chatBody');
-            chatBody.innerHTML = '';
+        function updateTicketInfo(ticket) {
+            document.getElementById('ticketNumber').textContent = ticket.ticket_number;
+            document.getElementById('ticketCreated').textContent = new Date(ticket.created_at).toLocaleDateString('id-ID');
+            
+            const statusBadge = document.getElementById('ticketStatus');
+            statusBadge.textContent = ticket.status.toUpperCase().replace('_', ' ');
+            statusBadge.className = 'status-badge status-' + ticket.status;
+            
+            document.getElementById('headerSubtitle').textContent = ticket.subject;
+            document.getElementById('ticketInfo').style.display = 'grid';
+        }
 
+        function loadMessages() {
+            if (!currentTicketId) return;
+
+            fetch(`src/api/get-customer-messages.php?ticket_id=${currentTicketId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayMessages(data.data.messages);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            
             if (messages.length === 0) {
-                chatBody.innerHTML = '<div class="loading">Tidak ada pesan. Mulai percakapan sekarang.</div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <p>Belum ada pesan. Mulai percakapan Anda!</p>
+                    </div>
+                `;
                 return;
             }
 
-            messages.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = `message-group ${msg.sender_type}`;
-                
-                const bubble = document.createElement('div');
-                bubble.className = `message-bubble ${msg.sender_type}`;
-                bubble.innerHTML = `
-                    <strong>${msg.sender_name}</strong><br>
-                    ${msg.message}
-                    <div class="message-time">${msg.created_at_formatted}</div>
+            container.innerHTML = messages.map(msg => {
+                const date = new Date(msg.created_at);
+                const timeStr = date.toLocaleTimeString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
+                return `
+                    <div class="message ${msg.sender_type}">
+                        <div class="message-bubble">
+                            <div class="message-sender">${msg.sender_name}</div>
+                            ${msg.message}
+                            <div class="message-time">${timeStr}</div>
+                        </div>
+                    </div>
                 `;
-                
-                msgDiv.appendChild(bubble);
-                chatBody.appendChild(msgDiv);
-            });
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
         }
 
         function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-
-            if (!message) {
-                alert('Pesan tidak boleh kosong');
+            const message = document.getElementById('messageInput').value.trim();
+            
+            if (!message || !currentTicketId) {
+                showError('Pesan tidak boleh kosong');
                 return;
             }
 
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
 
             const formData = new FormData();
-            formData.append('ticket_number', ticketNumber);
+            formData.append('ticket_id', currentTicketId);
             formData.append('message', message);
 
-            fetch('src/api/send-message.php', {
+            fetch('src/api/send-customer-message.php', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    messageInput.value = '';
+                    document.getElementById('messageInput').value = '';
+                    document.getElementById('errorMessage').innerHTML = '';
                     loadMessages();
                 } else {
-                    alert('Error: ' + data.message);
+                    showError(data.message || 'Gagal mengirim pesan');
                 }
-                sendBtn.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error: ' + error.message);
+                showError('Terjadi kesalahan saat mengirim pesan');
+            })
+            .finally(() => {
                 sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Kirim';
             });
         }
 
-        function scrollToBottom() {
-            const chatBody = document.getElementById('chatBody');
-            chatBody.scrollTop = chatBody.scrollHeight;
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle me-2"></i>${message}
+                </div>
+            `;
         }
 
-        function initChat() {
-            const param = getTicketNumberFromURL();
-            
-            if (param.startsWith('TK-')) {
-                ticketNumber = param;
-            } else {
-                ticketNumber = 'TK-' + param;
+        // Allow sending with Ctrl+Enter
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                sendMessage();
             }
-
-            document.getElementById('ticketInfo').textContent = 'Ticket: ' + ticketNumber;
-            
-            loadMessages();
-            
-            // Auto-refresh messages every 3 seconds
-            autoRefresh = setInterval(loadMessages, 3000);
-
-            // Allow Enter key to send message
-            document.getElementById('messageInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-        }
+        });
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            if (autoRefresh) clearInterval(autoRefresh);
+            if (messageRefreshInterval) clearInterval(messageRefreshInterval);
         });
-
-        // Initialize
-        window.addEventListener('load', initChat);
     </script>
 </body>
 </html>
