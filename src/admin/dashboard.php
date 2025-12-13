@@ -233,14 +233,14 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
         /* Statistics Grid */
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
             margin-bottom: 32px;
         }
 
         .stat-card {
             background: white;
-            padding: 24px;
+            padding: 20px 16px;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             text-align: center;
@@ -248,6 +248,7 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             border-top: 4px solid var(--primary);
             position: relative;
             overflow: hidden;
+        }
         }
 
         .stat-card::before {
@@ -292,7 +293,7 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
         }
 
         .stat-number {
-            font-size: 2.8em;
+            font-size: 2.4em;
             font-weight: 700;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
@@ -463,6 +464,16 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
 
             .stats {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+                margin-bottom: 24px;
+            }
+
+            .stat-card {
+                padding: 16px 12px;
+            }
+
+            .stat-number {
+                font-size: 2em;
             }
         }
 
