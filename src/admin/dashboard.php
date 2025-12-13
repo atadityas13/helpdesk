@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Dashboard
+ * Admin Dashboard - Modern Design
  * Display admin statistics and recent tickets
  */
 
@@ -32,7 +32,7 @@ $statsData = $stats ? mysqli_fetch_assoc($stats) : [];
 // Get recent tickets
 $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t 
     LEFT JOIN customers c ON t.customer_id = c.id 
-    ORDER BY t.created_at DESC LIMIT 10");
+    ORDER BY t.created_at DESC LIMIT 8");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -41,51 +41,41 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Helpdesk</title>
     <style>
-        :root {
-            --primary: #667eea;
-            --primary-dark: #5568d3;
-            --primary-light: #8b9ff5;
-            --secondary: #764ba2;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --light: #f9fafb;
-            --light-gray: #f3f4f6;
-            --medium-gray: #e5e7eb;
-            --dark-gray: #6b7280;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-            --border-radius: 12px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
-            --box-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html {
-            scroll-behavior: smooth;
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text-dark: #1f2937;
+            --text-gray: #6b7280;
+            --bg-light: #f9fafb;
+            --bg-lighter: #f3f4f6;
+            --border-light: #e5e7eb;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--light);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
             color: var(--text-dark);
             line-height: 1.6;
         }
 
-        /* Dashboard Layout */
         .dashboard {
             display: grid;
             grid-template-columns: 260px 1fr;
             min-height: 100vh;
         }
 
-        /* Sidebar */
+        /* ===== SIDEBAR ===== */
         .sidebar {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
@@ -94,27 +84,28 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             height: 100vh;
             width: 260px;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
 
         .sidebar-header {
-            padding: 24px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 28px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .sidebar-header h2 {
-            font-size: 1.4em;
-            font-weight: 700;
+            font-size: 1.5em;
+            font-weight: 800;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            letter-spacing: -0.5px;
         }
 
         .sidebar-menu {
             list-style: none;
-            padding: 16px 0;
+            padding: 20px 0;
         }
 
         .sidebar-menu li {
@@ -127,9 +118,10 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             padding: 14px 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
+            font-weight: 500;
         }
 
         .sidebar-menu a:hover {
@@ -138,52 +130,48 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
         }
 
         .sidebar-menu a.active {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             border-left-color: white;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .sidebar-separator {
             border: none;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 8px 0;
+            margin: 12px 0;
         }
 
-        /* Main Content */
+        /* ===== MAIN CONTENT ===== */
         .main-content {
             margin-left: 260px;
-            padding: 24px;
-            background: var(--light);
+            padding: 32px 24px;
+            background: var(--bg-light);
         }
 
-        /* Header */
-        .header {
-            background: white;
-            padding: 24px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            margin-bottom: 24px;
+        /* ===== HEADER ===== */
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
+            margin-bottom: 32px;
+            gap: 24px;
         }
 
-        .header h1 {
+        .page-title {
+            font-size: 2em;
+            font-weight: 800;
             color: var(--text-dark);
-            font-size: 1.8em;
-            font-weight: 700;
+            letter-spacing: -1px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin: 0;
+            gap: 12px;
         }
 
-        .header-right {
+        .user-section {
             display: flex;
-            gap: 20px;
             align-items: center;
+            gap: 20px;
             margin-left: auto;
         }
 
@@ -191,20 +179,18 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             text-align: right;
         }
 
-        .user-info p {
-            margin: 2px 0;
-            font-size: 0.9em;
-        }
-
-        .user-info strong {
+        .user-name {
             display: block;
+            font-weight: 700;
             color: var(--text-dark);
-            font-size: 1em;
+            font-size: 0.95em;
         }
 
-        .user-info .role {
-            color: var(--text-light);
+        .user-role {
+            display: block;
+            color: var(--text-gray);
             font-size: 0.85em;
+            margin-top: 2px;
         }
 
         .btn-logout {
@@ -214,117 +200,118 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
             font-size: 0.9em;
+            transition: all 0.3s ease;
             white-space: nowrap;
         }
 
         .btn-logout:hover {
             background: #dc2626;
             transform: translateY(-2px);
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
         }
 
-        .btn-logout:active {
-            transform: translateY(0);
+        /* ===== STATS SECTION ===== */
+        .stats-section {
+            margin-bottom: 40px;
         }
 
-        /* Statistics Grid */
-        .stats {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
-            margin-bottom: 32px;
         }
 
         .stat-card {
             background: white;
-            padding: 28px 24px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
-            transition: all 0.3s ease;
-            border-top: 5px solid var(--primary);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid var(--primary);
             position: relative;
             overflow: hidden;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
         }
 
-        .stat-card::before {
+        .stat-card::after {
             content: '';
             position: absolute;
-            top: 0;
-            right: -50px;
-            width: 100px;
-            height: 100px;
-            background: rgba(102, 126, 234, 0.05);
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.08), transparent);
             border-radius: 50%;
         }
 
         .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--box-shadow-lg);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
         }
 
         .stat-card.open {
-            border-top-color: var(--warning);
+            border-left-color: var(--warning);
         }
 
         .stat-card.in-progress {
-            border-top-color: var(--info);
+            border-left-color: var(--info);
         }
 
         .stat-card.resolved {
-            border-top-color: var(--success);
+            border-left-color: var(--success);
         }
 
         .stat-card.closed {
-            border-top-color: var(--dark-gray);
+            border-left-color: var(--text-gray);
         }
 
-        .stat-card h3 {
-            color: var(--text-light);
-            font-size: 0.9em;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--text-gray);
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
-        .stat-number {
-            font-size: 3em;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
+        .stat-value {
+            font-size: 2.8em;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Content Box */
-        .content-box {
+        .stat-card.open .stat-value { color: var(--warning); }
+        .stat-card.in-progress .stat-value { color: var(--info); }
+        .stat-card.resolved .stat-value { color: var(--success); }
+        .stat-card.closed .stat-value { color: var(--text-gray); }
+
+        /* ===== TICKETS SECTION ===== */
+        .tickets-section {
             background: white;
-            padding: 24px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
 
-        .content-box h2 {
-            font-size: 1.4em;
+        .section-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 1.3em;
+            font-weight: 800;
             color: var(--text-dark);
-            margin-bottom: 24px;
+            letter-spacing: -0.5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
-        /* Table Responsive */
-        .table-responsive {
+        .table-wrapper {
             overflow-x: auto;
         }
 
@@ -333,21 +320,24 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             border-collapse: collapse;
         }
 
+        table thead {
+            background: var(--bg-lighter);
+        }
+
         table th {
-            background: var(--light-gray);
-            padding: 14px;
+            padding: 16px 24px;
             text-align: left;
+            font-size: 0.85em;
+            font-weight: 700;
             color: var(--text-dark);
-            font-weight: 600;
-            border-bottom: 2px solid var(--medium-gray);
-            font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-light);
         }
 
         table td {
-            padding: 14px;
-            border-bottom: 1px solid var(--medium-gray);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
             font-size: 0.95em;
         }
 
@@ -356,133 +346,85 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
         }
 
         table tbody tr:hover {
-            background: var(--light);
+            background: var(--bg-light);
         }
 
-        /* Badges */
+        .ticket-number {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
         .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
             display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 700;
             text-transform: capitalize;
         }
 
         .badge-open {
-            background: #fef3c7;
+            background: rgba(245, 158, 11, 0.15);
             color: #92400e;
         }
 
         .badge-in-progress {
-            background: #dbeafe;
+            background: rgba(59, 130, 246, 0.15);
             color: #1e40af;
         }
 
         .badge-resolved {
-            background: #dcfce7;
-            color: #166534;
+            background: rgba(16, 185, 129, 0.15);
+            color: #065f46;
         }
 
         .badge-closed {
-            background: #f3f4f6;
-            color: #4b5563;
+            background: rgba(107, 114, 128, 0.15);
+            color: #374151;
         }
 
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .btn-small {
-            padding: 8px 14px;
+        .action-btn {
+            padding: 8px 16px;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.8em;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.2s ease;
-            white-space: nowrap;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .btn-small:hover {
+        .action-btn:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
         }
 
-        .btn-small:active {
-            transform: translateY(0);
-        }
-
-        /* Empty State */
         .empty-state {
+            padding: 60px 40px;
             text-align: center;
-            padding: 40px 20px;
-            color: var(--text-light);
+            color: var(--text-gray);
         }
 
-        .empty-state-icon {
+        .empty-icon {
             font-size: 3em;
             margin-bottom: 16px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .dashboard {
-                grid-template-columns: 200px 1fr;
-            }
-
-            .sidebar {
-                width: 200px;
-            }
-
-            .main-content {
-                margin-left: 200px;
-                padding: 16px;
-            }
-
-            .sidebar-menu a {
-                padding: 12px 16px;
-                font-size: 0.9em;
-            }
-
-            .header {
-                padding: 16px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header h1 {
-                font-size: 1.5em;
-            }
-
-            .header-right {
-                width: 100%;
-                justify-content: space-between;
-                margin-left: 0;
-            }
-
-            .stats {
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1200px) {
+            .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 16px;
-                margin-bottom: 24px;
             }
 
             .stat-card {
-                padding: 20px 16px;
-                min-height: 120px;
+                padding: 20px;
             }
 
-            .stat-card h3 {
-                font-size: 0.85em;
-                margin-bottom: 12px;
-            }
-
-            .stat-number {
+            .stat-value {
                 font-size: 2.2em;
             }
         }
@@ -493,22 +435,17 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             }
 
             .sidebar {
+                position: relative;
                 width: 100%;
                 height: auto;
-                position: relative;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-
-            .sidebar-header {
-                padding: 16px 20px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             }
 
             .sidebar-menu {
                 display: flex;
                 overflow-x: auto;
-                gap: 0;
                 padding: 0;
-                margin: 0;
+                gap: 0;
                 -webkit-overflow-scrolling: touch;
             }
 
@@ -517,10 +454,9 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             }
 
             .sidebar-menu a {
-                padding: 12px 16px;
                 border-left: none;
                 border-bottom: 3px solid transparent;
-                white-space: nowrap;
+                padding: 12px 16px;
             }
 
             .sidebar-menu a.active {
@@ -534,163 +470,117 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
 
             .main-content {
                 margin-left: 0;
-                padding: 12px;
+                padding: 20px 16px;
             }
 
-            .header {
+            .page-header {
                 flex-direction: column;
                 align-items: flex-start;
-                padding: 16px;
+                margin-bottom: 24px;
             }
 
-            .header h1 {
-                font-size: 1.4em;
+            .page-title {
+                font-size: 1.6em;
                 width: 100%;
             }
 
-            .header-right {
+            .user-section {
                 width: 100%;
                 margin-left: 0;
-                justify-content: space-between;
+                flex-direction: column;
+                align-items: flex-start;
             }
 
             .user-info {
                 text-align: left;
             }
 
-            .stats {
+            .btn-logout {
+                width: 100%;
+                text-align: center;
+            }
+
+            .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
-                margin-bottom: 20px;
+                margin-bottom: 24px;
             }
 
             .stat-card {
-                padding: 16px 12px;
-                min-height: 110px;
+                padding: 16px;
             }
 
-            .stat-card h3 {
-                font-size: 0.75em;
-                margin-bottom: 10px;
-                letter-spacing: 0.5px;
-            }
-
-            .stat-number {
+            .stat-value {
                 font-size: 1.8em;
             }
 
-            .table-responsive {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            table {
-                min-width: 600px;
+            .section-header {
+                padding: 16px;
+                font-size: 1.1em;
             }
 
             table th,
             table td {
-                padding: 10px 8px;
+                padding: 12px 16px;
                 font-size: 0.85em;
             }
 
-            .action-buttons {
-                flex-wrap: wrap;
-            }
-
-            .btn-small {
-                padding: 6px 10px;
-                font-size: 0.75em;
+            .table-wrapper {
+                overflow-x: auto;
             }
         }
 
         @media (max-width: 480px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
             .main-content {
-                padding: 8px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 12px;
                 padding: 12px;
             }
 
-            .header h1 {
-                font-size: 1.2em;
+            .page-header {
+                margin-bottom: 20px;
             }
 
-            .header-right {
-                width: 100%;
-                flex-direction: column;
-                gap: 12px;
+            .page-title {
+                font-size: 1.4em;
             }
 
-            .user-info {
-                width: 100%;
-            }
-
-            .btn-logout {
-                width: 100%;
-                padding: 10px;
-            }
-
-            .stats {
+            .stats-grid {
                 grid-template-columns: 1fr;
                 gap: 12px;
-                margin-bottom: 16px;
             }
 
             .stat-card {
-                padding: 16px 12px;
-                min-height: 100px;
+                padding: 14px;
             }
 
-            .stat-card h3 {
-                font-size: 0.75em;
-                margin-bottom: 10px;
-            }
-
-            .stat-number {
+            .stat-value {
                 font-size: 1.8em;
             }
 
-            .content-box {
-                padding: 12px;
-                border-radius: 8px;
+            .stat-label {
+                font-size: 0.75em;
             }
 
-            .content-box h2 {
-                font-size: 1.1em;
-                margin-bottom: 16px;
+            .section-header {
+                padding: 14px;
+                font-size: 1em;
             }
-        }
 
-        /* Scrollbar Styling */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
+            table th,
+            table td {
+                padding: 10px 12px;
+                font-size: 0.8em;
+            }
 
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
+            .action-btn {
+                padding: 6px 12px;
+                font-size: 0.75em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
-        <!-- Sidebar Navigation -->
+        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2>📊 Helpdesk</h2>
@@ -704,85 +594,77 @@ $recentTickets = $db->query("SELECT t.*, c.name, c.email FROM tickets t
             </ul>
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <div class="main-content">
-            <!-- Header -->
-            <div class="header">
-                <h1>📊 Dashboard</h1>
-                <div class="header-right">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">📈 Dashboard</h1>
+                <div class="user-section">
                     <div class="user-info">
-                        <strong><?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?></strong>
-                        <span class="role"><?php echo ucfirst($_SESSION['admin_role'] ?? 'Agent'); ?></span>
+                        <span class="user-name"><?php echo htmlspecialchars(getAdminUsername()); ?></span>
+                        <span class="user-role"><?php echo htmlspecialchars(getAdminRole()); ?></span>
                     </div>
                     <a href="../../logout.php" class="btn-logout">Logout</a>
                 </div>
             </div>
 
-            <!-- Statistics Cards -->
-            <div class="stats">
-                <div class="stat-card open">
-                    <h3>🔴 Open</h3>
-                    <p class="stat-number"><?php echo $statsData['open_tickets'] ?? 0; ?></p>
-                </div>
-                <div class="stat-card in-progress">
-                    <h3>🟡 In Progress</h3>
-                    <p class="stat-number"><?php echo $statsData['in_progress_tickets'] ?? 0; ?></p>
-                </div>
-                <div class="stat-card resolved">
-                    <h3>🟢 Resolved</h3>
-                    <p class="stat-number"><?php echo $statsData['resolved_tickets'] ?? 0; ?></p>
-                </div>
-                <div class="stat-card closed">
-                    <h3>⚪ Closed</h3>
-                    <p class="stat-number"><?php echo $statsData['closed_tickets'] ?? 0; ?></p>
+            <!-- Statistics -->
+            <div class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card open">
+                        <div class="stat-label">🔴 Open</div>
+                        <div class="stat-value"><?php echo $statsData['open_tickets'] ?? 0; ?></div>
+                    </div>
+                    <div class="stat-card in-progress">
+                        <div class="stat-label">🟡 In Progress</div>
+                        <div class="stat-value"><?php echo $statsData['in_progress_tickets'] ?? 0; ?></div>
+                    </div>
+                    <div class="stat-card resolved">
+                        <div class="stat-label">🟢 Resolved</div>
+                        <div class="stat-value"><?php echo $statsData['resolved_tickets'] ?? 0; ?></div>
+                    </div>
+                    <div class="stat-card closed">
+                        <div class="stat-label">⚪ Closed</div>
+                        <div class="stat-value"><?php echo $statsData['closed_tickets'] ?? 0; ?></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Recent Tickets Table -->
-            <div class="content-box">
-                <h2>📋 Ticket Terbaru</h2>
+            <!-- Recent Tickets -->
+            <div class="tickets-section">
+                <div class="section-header">📋 Ticket Terbaru</div>
                 <?php if ($recentTickets && mysqli_num_rows($recentTickets) > 0): ?>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>No. Ticket</th>
-                                <th>Pelanggan</th>
-                                <th>Subject</th>
-                                <th>Status</th>
-                                <th>Dibuat</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($ticket = mysqli_fetch_assoc($recentTickets)): ?>
-                            <tr>
-                                <td><strong><?php echo htmlspecialchars($ticket['ticket_number']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($ticket['name']); ?></td>
-                                <td><?php echo htmlspecialchars(substr($ticket['subject'], 0, 40) . (strlen($ticket['subject']) > 40 ? '...' : '')); ?></td>
-                                <td>
-                                    <span class="badge badge-<?php echo str_replace('_', '-', $ticket['status']); ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('d M Y H:i', strtotime($ticket['created_at'])); ?></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="manage-tickets.php?ticket_id=<?php echo $ticket['id']; ?>" class="btn-small">
-                                            💬 Chat
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No. Ticket</th>
+                                    <th>Pelanggan</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($ticket = mysqli_fetch_assoc($recentTickets)): ?>
+                                <tr>
+                                    <td><span class="ticket-number"><?php echo htmlspecialchars($ticket['ticket_number']); ?></span></td>
+                                    <td><?php echo htmlspecialchars($ticket['name']); ?></td>
+                                    <td><?php echo htmlspecialchars(substr($ticket['subject'], 0, 50) . (strlen($ticket['subject']) > 50 ? '...' : '')); ?></td>
+                                    <td><span class="badge badge-<?php echo str_replace('_', '-', $ticket['status']); ?>"><?php echo ucfirst(str_replace('_', ' ', $ticket['status'])); ?></span></td>
+                                    <td><?php echo date('d M Y', strtotime($ticket['created_at'])); ?></td>
+                                    <td><a href="manage-tickets.php?ticket_id=<?php echo $ticket['id']; ?>" class="action-btn">💬 Balas</a></td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php else: ?>
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <p>Belum ada ticket</p>
-                </div>
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Belum ada ticket</p>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
