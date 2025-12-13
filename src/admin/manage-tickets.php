@@ -431,7 +431,12 @@ if ($result = $db->query("
                         </div>
                     <?php else: ?>
                         <?php foreach ($tickets as $ticket): ?>
-                            <div class="ticket-item" onclick="selectTicket(<?php echo $ticket['id']; ?>)" data-ticket-id="<?php echo $ticket['id']; ?>">
+                            <div class="ticket-item" 
+                                 onclick="selectTicket(<?php echo (int)$ticket['id']; ?>); return false;" 
+                                 data-ticket-id="<?php echo (int)$ticket['id']; ?>"
+                                 role="button"
+                                 tabindex="0"
+                                 style="user-select: none;">
                                 <div class="ticket-number"><?php echo htmlspecialchars($ticket['ticket_number']); ?></div>
                                 <div class="ticket-subject"><?php echo htmlspecialchars(substr($ticket['subject'], 0, 35)); ?></div>
                                 <span class="ticket-status badge-<?php echo str_replace('_', '-', $ticket['status']); ?>">
@@ -477,72 +482,128 @@ if ($result = $db->query("
     <script>
         let currentTicketId = null;
         let messageRefreshInterval = null;
+        
+        // Debug info
+        console.log('manage-tickets.php loaded');
+        console.log('Current path:', window.location.pathname);
 
         function selectTicket(ticketId) {
+            console.log('selectTicket called with ID:', ticketId);
             currentTicketId = ticketId;
-            loadTicketMessages(ticketId);
-            loadTicketDetails(ticketId);
-
+            
+            // Update UI
             document.querySelectorAll('.ticket-item').forEach(el => {
                 el.classList.remove('active');
             });
-            document.querySelector(`[data-ticket-id="${ticketId}"]`).classList.add('active');
+            const ticketEl = document.querySelector(`[data-ticket-id="${ticketId}"]`);
+            if (ticketEl) {
+                ticketEl.classList.add('active');
+            }
 
             document.getElementById('chatInputArea').style.display = 'block';
 
+            // Load data
+            loadTicketDetails(ticketId);
+            loadTicketMessages(ticketId);
+
+            // Clear existing interval and set new one
             if (messageRefreshInterval) clearInterval(messageRefreshInterval);
             messageRefreshInterval = setInterval(() => loadTicketMessages(ticketId), 2000);
         }
 
         function loadTicketDetails(ticketId) {
+            console.log('Loading ticket details for ID:', ticketId);
             fetch(`../api/get-ticket.php?id=${ticketId}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('API response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Ticket data:', data);
                     if (data.success) {
                         const ticket = data.data;
                         document.getElementById('ticketTitle').textContent = ticket.ticket_number;
                         document.getElementById('ticketSubtitle').textContent = `${ticket.name} | ${ticket.subject}`;
                         document.getElementById('statusSelect').value = ticket.status;
+                    } else {
+                        console.error('API error:', data.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Gagal memuat ticket',
+                            confirmButtonColor: '#667eea'
+                        });
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Gagal memuat ticket: ' + error.message,
+                        confirmButtonColor: '#667eea'
+                    });
+                });
         }
 
         function loadTicketMessages(ticketId) {
+            console.log('Loading ticket messages for ID:', ticketId);
             fetch(`../api/get-ticket-messages.php?ticket_id=${ticketId}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Messages API response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Messages data:', data);
                     if (data.success) {
                         displayMessages(data.data.messages);
+                    } else {
+                        console.error('Messages API error:', data.message);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Messages fetch error:', error);
+                });
         }
 
         function displayMessages(messages) {
             const container = document.getElementById('chatMessages');
-            if (messages.length === 0) {
+            
+            if (!messages || messages.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Belum ada pesan</p></div>';
                 return;
             }
 
-            container.innerHTML = messages.map(msg => {
-                const messageClass = msg.sender_type === 'admin' ? 'admin' : 'customer';
-                const date = new Date(msg.created_at);
-                const timeStr = date.toLocaleTimeString('id-ID', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                return `
-                    <div class="message ${messageClass}">
-                        <div class="message-bubble">
-                            <div class="message-sender">${msg.sender_name || 'Unknown'}</div>
-                            <div>${msg.message}</div>
-                            <div class="message-time">${timeStr}</div>
+            try {
+                container.innerHTML = messages.map(msg => {
+                    const messageClass = msg.sender_type === 'admin' ? 'admin' : 'customer';
+                    let timeStr = '';
+                    
+                    try {
+                        const date = new Date(msg.created_at);
+                        timeStr = date.toLocaleTimeString('id-ID', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                    } catch (e) {
+                        timeStr = msg.created_at_formatted || '';
+                    }
+                    
+                    return `
+                        <div class="message ${messageClass}">
+                            <div class="message-bubble">
+                                <div class="message-sender">${msg.sender_name || 'Unknown'}</div>
+                                <div>${msg.message}</div>
+                                <div class="message-time">${timeStr}</div>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error rendering messages:', e);
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error mengload pesan</p></div>';
+            }
+            
             container.scrollTop = container.scrollHeight;
         }
 
