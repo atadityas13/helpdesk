@@ -21,21 +21,21 @@ try {
         throw new Exception('Method tidak allowed');
     }
     
-    $username = $_POST['username'] ?? '';
+    $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    if (empty($username) || empty($password)) {
-        throw new Exception('Username dan password diperlukan');
+    if (empty($email) || empty($password)) {
+        throw new Exception('Email dan password diperlukan');
     }
     
     // Authenticate
-    $result = authenticateAdmin($username, $password);
+    $result = authenticateAdmin($email, $password);
     
     if (!$result['success']) {
         throw new Exception($result['message']);
     }
     
-    logAction('admin_login', 'Username: ' . $username, $result['admin_id']);
+    logAction('admin_login', 'Email: ' . $email, $result['admin_id']);
     
     echo json_encode([
         'success' => true,

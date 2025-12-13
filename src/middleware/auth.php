@@ -8,32 +8,32 @@ require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/../config/database.php';
 
 /**
- * Authenticate admin dengan username dan password
- * @param string $username
+ * Authenticate admin dengan username/email dan password
+ * @param string $identifier Username atau email
  * @param string $password
  * @return array ['success' => bool, 'message' => string, 'admin_id' => int|null]
  */
-function authenticateAdmin($username, $password) {
+function authenticateAdmin($identifier, $password) {
     try {
         $db = Database::getInstance();
         $conn = $db->getConnection();
         
-        // Get admin by username
+        // Get admin by username OR email
         $stmt = $conn->prepare("
             SELECT id, username, password, email, role, is_active
             FROM admins
-            WHERE username = ?
+            WHERE username = ? OR email = ?
             LIMIT 1
         ");
         
-        $stmt->bind_param('s', $username);
+        $stmt->bind_param('ss', $identifier, $identifier);
         $stmt->execute();
         $result = $stmt->get_result();
         
         if (!($admin = $result->fetch_assoc())) {
             return [
                 'success' => false,
-                'message' => 'Username atau password salah',
+                'message' => 'Email/Username atau password salah',
                 'admin_id' => null
             ];
         }
@@ -51,7 +51,7 @@ function authenticateAdmin($username, $password) {
         if (!password_verify($password, $admin['password'])) {
             return [
                 'success' => false,
-                'message' => 'Username atau password salah',
+                'message' => 'Email/Username atau password salah',
                 'admin_id' => null
             ];
         }
